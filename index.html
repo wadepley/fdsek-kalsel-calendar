@@ -1249,32 +1249,57 @@ function showDayPopup(dstr,filtered){
   var d=new Date(dstr+'T00:00:00');
   var dateLabel=DAY[d.getDay()]+', '+d.getDate()+' '+MN[d.getMonth()]+' '+d.getFullYear();
 
-  var evHtml=dayEvs.length?dayEvs.map(function(ev){
-    var cat=(ev&&ev.cat!==undefined?CATS[ev.cat]:null)||CATS[CATS.length-1]||{name:'?',color:'#94A3B8'};
-    var dur=ev.dateEnd&&ev.dateEnd!==ev.dateStart?(' · s/d '+fmtDateShort(ev.dateEnd)):'';
-    var time=ev.time?(ev.time+(ev.timeEnd?' – '+ev.timeEnd:''))+' &nbsp;':'';
-    return '<div class="dp-ev-item" onclick="closeM(\'dayOv\');showDetById('+JSON.stringify(String(ev.id))+')">'+
-      '<div class="dp-ev-dot" style="background:'+cat.color+'"></div>'+
-      '<div class="dp-ev-info">'+
-        '<div class="dp-ev-title">'+ev.title+'</div>'+
-        '<div class="dp-ev-meta">'+time+dateLabel+dur+'</div>'+
-        '<span class="dp-ev-cat" style="background:'+cat.color+'18;color:'+cat.color+';">'+cat.name+'</span>'+
-      '</div>'+
-    '</div>';
-  }).join(''):'<div class="dp-empty">Tidak ada kegiatan</div>';
-
-  document.getElementById('dayBody').innerHTML=
+  // Build using DOM to avoid escaping issues
+  var dayBodyEl=document.getElementById('dayBody');
+  dayBodyEl.innerHTML=
     '<div class="dp-header">'+
       '<div>'+
         '<div class="dp-title">'+dateLabel+'</div>'+
         '<div class="dp-date">'+dayEvs.length+' kegiatan</div>'+
       '</div>'+
       '<div style="display:flex;align-items:center;gap:8px;">'+
-        '<button class="dp-add" onclick="closeM(\'dayOv\');openAdd(\''+dstr+'\')">+ Tambah</button>'+
-        '<button class="xb" onclick="closeM(\'dayOv\')">✕</button>'+
+        '<button class="dp-add" id="dpAddBtn">+ Tambah</button>'+
+        '<button class="xb" id="dpCloseBtn">✕</button>'+
       '</div>'+
-    '</div>'+
-    evHtml;
+    '</div>';
+
+  // Bind header buttons
+  var dpAdd=document.getElementById('dpAddBtn');
+  if(dpAdd)(function(ds2){dpAdd.onclick=function(){closeM('dayOv');openAdd(ds2);};})(dstr);
+  var dpClose=document.getElementById('dpCloseBtn');
+  if(dpClose)dpClose.onclick=function(){closeM('dayOv');};
+
+  if(dayEvs.length){
+    dayEvs.forEach(function(ev){
+      if(!ev) return;
+      var cat=(ev.cat!==undefined?CATS[ev.cat]:null)||CATS[CATS.length-1]||{name:'?',color:'#94A3B8'};
+      var dur=ev.dateEnd&&ev.dateEnd!==ev.dateStart?' · s/d '+fmtDateShort(ev.dateEnd):'';
+      var time=ev.time?(ev.time+(ev.timeEnd?' – '+ev.timeEnd:''))+' ':'' ;
+      var item=document.createElement('div');
+      item.className='dp-ev-item';
+      item.innerHTML=
+        '<div class="dp-ev-dot" style="background:'+cat.color+'"></div>'+
+        '<div class="dp-ev-info">'+
+          '<div class="dp-ev-title">'+ev.title+'</div>'+
+          '<div class="dp-ev-meta">'+time+dateLabel+dur+'</div>'+
+          '<span class="dp-ev-cat" style="background:'+cat.color+'18;color:'+cat.color+';">'+cat.name+'</span>'+
+        '</div>';
+      // Click: close day popup, show detail
+      (function(evObj){
+        item.onclick=function(){
+          closeM('dayOv');
+          showDet(evObj);
+        };
+      })(ev);
+      dayBodyEl.appendChild(item);
+    });
+  } else {
+    var empty=document.createElement('div');
+    empty.className='dp-empty';
+    empty.textContent='Tidak ada kegiatan';
+    dayBodyEl.appendChild(empty);
+  }
+
   var dayEl=document.getElementById('dayOv');if(dayEl)dayEl.style.display='flex';
 }
 
