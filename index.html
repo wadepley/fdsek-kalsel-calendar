@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>FDSEK BI Kalsel Calendar</title>
+<title>FDSEK BI Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -874,141 +874,7 @@ function statusHtml(ev){
 }
 
 /* ══ SAMPLE DATA ══ */
-var evs=[
-  {id:1,title:'Rapat Koordinasi',cat:4,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()),
-   time:'09:00',timeEnd:'11:00',loc:'Ruang Rapat A',desc:'Rapat rutin mingguan',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Sari Dewi',unit:'Bidang SDM'},{name:'Ahmad Fauzi',unit:'Bidang Keuangan'}]},
-
-  {id:2,title:'Survei Lapangan',cat:0,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+2),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+4),
-   time:'08:00',timeEnd:'17:00',loc:'https://maps.google.com',desc:'Bawa dokumen survei',
-   pic:{name:'Rizki Pratama',unit:'Unit Survei'},
-   ang:[{name:'Nanda Putri',unit:'Unit Survei'}]},
-
-  {id:3,title:'Liaison Dinas Sosial',cat:1,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+4),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+4),
-   time:'13:00',timeEnd:'',loc:'Kantor Dinas Sosial',desc:'',
-   pic:{name:'Sari Dewi',unit:'Bidang SDM'},ang:[]},
-
-  {id:4,title:'Review Buku SEKDA',cat:2,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+7),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+8),
-   time:'10:00',timeEnd:'',loc:'',desc:'Revisi bab 3',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'},{name:'Hendra Wijaya',unit:'Bidang Kepegawaian'}]},
-
-  {id:5,title:'Meeting PM Sprint',cat:3,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+3),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+3),
-   time:'14:00',timeEnd:'16:00',loc:'https://zoom.us/j/123456789',desc:'Sprint review Q1',
-   pic:{name:'Rizki Pratama',unit:'Unit IT'},
-   ang:[{name:'Nanda Putri',unit:'Unit IT'},{name:'Ahmad Fauzi',unit:'Bidang Keuangan'}]},
-
-  {id:6,title:'Dinas ke Jakarta',manualStatus:'done',cat:6,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()-5),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()-3),
-   time:'06:00',timeEnd:'',loc:'Bandara Halim',desc:'Perjalanan dinas kementerian',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},ang:[]},
-
-  {id:7,title:'IHT Kepegawaian',manualStatus:'done',cat:7,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()-2),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()-1),
-   time:'08:30',timeEnd:'17:00',loc:'Aula Kantor',desc:'In House Training kepegawaian',
-   pic:{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'},
-   ang:[{name:'Hendra Wijaya',unit:'Bidang Kepegawaian'},{name:'Sari Dewi',unit:'Bidang SDM'},{name:'Ahmad Fauzi',unit:'Bidang Keuangan'}]},
-
-  {id:8,title:'CA Bulanan',manualStatus:'done',cat:5,
-   dateStart:ds(today.getFullYear(),today.getMonth()-1,15),
-   dateEnd:ds(today.getFullYear(),today.getMonth()-1,15),
-   time:'10:00',timeEnd:'',loc:'https://meet.google.com/abc',desc:'',
-   pic:{name:'Sari Dewi',unit:'Bidang SDM'},
-   ang:[{name:'Budi Santoso',unit:'Seksi Perencanaan'}]},
-
-  {id:9,title:'Rapat Evaluasi',manualStatus:'done',cat:4,
-   dateStart:ds(today.getFullYear(),today.getMonth()-1,22),
-   dateEnd:ds(today.getFullYear(),today.getMonth()-1,22),
-   time:'13:00',timeEnd:'',loc:'Ruang SEKDA',desc:'',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Rizki Pratama',unit:'Unit IT'},{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'}]},
-
-  {id:10,title:'Survei Semester',cat:0,
-   dateStart:ds(today.getFullYear(),today.getMonth()+1,8),
-   dateEnd:ds(today.getFullYear(),today.getMonth()+1,10),
-   time:'08:00',timeEnd:'',loc:'Lapangan',desc:'',
-   pic:{name:'Rizki Pratama',unit:'Unit Survei'},
-   ang:[{name:'Nanda Putri',unit:'Unit Survei'},{name:'Hendra Wijaya',unit:'Bidang Kepegawaian'}]},
-,
-
-  /* ── Simulasi 9 kegiatan dalam 1 hari (14 hari ke depan) ── */
-  {id:21,title:'Rapat Pagi Koordinasi',cat:4,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'07:30',timeEnd:'09:00',loc:'Ruang Rapat A',desc:'Kick-off harian',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Sari Dewi',unit:'Bidang SDM'}]},
-
-  {id:22,title:'Survei Lokasi Baru',cat:0,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'08:30',timeEnd:'10:00',loc:'Jl. Ahmad Yani KM 5',desc:'Survei awal lapangan',
-   pic:{name:'Rizki Pratama',unit:'Unit Survei'},
-   ang:[{name:'Nanda Putri',unit:'Unit Survei'},{name:'Hendra Wijaya',unit:'Bidang Kepegawaian'}]},
-
-  {id:23,title:'Liaison Kemenkeu',cat:1,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'09:30',timeEnd:'11:00',loc:'https://zoom.us/j/99887766',desc:'Koordinasi anggaran Q2',
-   pic:{name:'Sari Dewi',unit:'Bidang SDM'},
-   ang:[{name:'Ahmad Fauzi',unit:'Bidang Keuangan'}]},
-
-  {id:24,title:'Review CA Semester',cat:5,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'10:00',timeEnd:'11:30',loc:'Ruang Rapat B',desc:'Evaluasi CA semester pertama',
-   pic:{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'},
-   ang:[{name:'Budi Santoso',unit:'Seksi Perencanaan'},{name:'Rizki Pratama',unit:'Unit IT'}]},
-
-  {id:25,title:'Finalisasi Buku SEKDA',cat:2,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'11:00',timeEnd:'12:00',loc:'Ruang Kerja SEKDA',desc:'Finalisasi bab terakhir',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'}]},
-
-  {id:26,title:'Meeting PM Mingguan',cat:3,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'13:00',timeEnd:'14:00',loc:'https://meet.google.com/xyz-abcd',desc:'Update progres proyek',
-   pic:{name:'Rizki Pratama',unit:'Unit IT'},
-   ang:[{name:'Nanda Putri',unit:'Unit IT'},{name:'Sari Dewi',unit:'Bidang SDM'},{name:'Ahmad Fauzi',unit:'Bidang Keuangan'}]},
-
-  {id:27,title:'IHT Digital Literasi',cat:7,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'14:00',timeEnd:'15:30',loc:'Aula Gedung Baru',desc:'Pelatihan literasi digital staf',
-   pic:{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'},
-   ang:[{name:'Hendra Wijaya',unit:'Bidang Kepegawaian'},{name:'Nanda Putri',unit:'Unit Survei'}]},
-
-  {id:28,title:'Dinas Kunjungan OJK',cat:6,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'15:30',timeEnd:'17:00',loc:'Kantor OJK Kalsel',desc:'Koordinasi pengawasan',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Sari Dewi',unit:'Bidang SDM'}]},
-
-  {id:29,title:'Rapat Penutup Harian',cat:8,
-   dateStart:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   dateEnd:ds(today.getFullYear(),today.getMonth(),today.getDate()+14),
-   time:'17:00',timeEnd:'17:30',loc:'Ruang Rapat A',desc:'Recap & action items hari ini',
-   pic:{name:'Budi Santoso',unit:'Seksi Perencanaan'},
-   ang:[{name:'Rizki Pratama',unit:'Unit IT'},{name:'Dewi Rahayu',unit:'Bidang Kepegawaian'},{name:'Sari Dewi',unit:'Bidang SDM'}]}
-];
-
+var evs=[]
 /* ══ PERSONS ══ */
 function getAllPersons(){
   var map={};
@@ -2314,6 +2180,7 @@ document.addEventListener('click',function(e){
 
 /* ══ FIREBASE REALTIME DATABASE SYNC ══ */
 var LS_FB_URL = 'fdsek_firebase_url';
+var FIREBASE_DEFAULT_URL = 'https://fdsek-bi-kalsel-calendar-default-rtdb.asia-southeast1.firebasedatabase.app';
 var fbDbUrl   = '';
 var fbEnabled = false;
 var fbSyncTimer = null;
@@ -2347,7 +2214,7 @@ function fbSetStatus(state, detail){
   var lbl=document.getElementById('fbLabel');
   if(!el) return;
   var states={
-    noconfig: {cls:'noconfig', dlbl:'🔥 Firebase belum dikonfigurasi'},
+    noconfig: {cls:'noconfig', dlbl:'🔥 Firebase: klik untuk konfigurasi'},
     syncing:  {cls:'syncing',  dlbl:'🔄 Menyinkronkan...'},
     ok:       {cls:'ok',       dlbl:'✅ Tersinkron'},
     err:      {cls:'err',      dlbl:'❌ Sync gagal — klik untuk cek'},
@@ -2397,9 +2264,17 @@ function disableFb(){
 function loadFbConfig(){
   try{
     var url = (localStorage.getItem(LS_FB_URL) || '').trim().replace(/\/+$/,'');
-    fbDbUrl   = url;
-    fbEnabled = !!url;
-  }catch(e){ fbEnabled = false; }
+    // Use saved URL or fallback to hardcoded default
+    fbDbUrl   = url || FIREBASE_DEFAULT_URL;
+    fbEnabled = !!fbDbUrl;
+    // Save to localStorage if using default
+    if(!url && fbDbUrl){
+      localStorage.setItem(LS_FB_URL, fbDbUrl);
+    }
+  }catch(e){
+    fbDbUrl   = FIREBASE_DEFAULT_URL;
+    fbEnabled = !!fbDbUrl;
+  }
   fbSetStatus(fbEnabled ? 'ok' : 'noconfig');
 }
 
@@ -2659,18 +2534,20 @@ function showCustomConfirm(title, msg, onOk, onCancel){
 }
 
 /* ══ INIT ══ */
-loadFbConfig();
-loadData();
+loadFbConfig();   // Sets fbDbUrl (from localStorage or hardcoded default)
 updateBackupInfo();
-buildFilter(); buildMini(); renderCal();
-if(fbEnabled){
-  fbPull(function(ok){
-    if(!ok && evs.length>0) fbPush(null); // Firebase empty → push local data
-    fbStartAutoSync();
-  });
-} else {
+buildFilter(); buildMini(); renderCal(); // Render empty/local first
+// Always pull from Firebase on open
+fbPull(function(ok){
+  if(!ok){
+    // Firebase empty — load localStorage as fallback
+    loadData();
+    buildFilter(); buildMini(); renderCal();
+    // Push localStorage data to Firebase if any
+    if(evs.length>0) fbPush(null);
+  }
   fbStartAutoSync();
-}
+});
 </script>
 </body>
 </html>
