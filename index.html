@@ -2295,7 +2295,7 @@ function fbSetStatus(state, detail){
   var states={
     noconfig: {cls:'noconfig', dlbl:'🔥 Firebase: klik untuk konfigurasi'},
     syncing:  {cls:'syncing',  dlbl:'🔄 Menyinkronkan...'},
-    ok:       {cls:'ok',       dlbl:'✅ Tersinkron'},
+    ok:       {cls:'ok',       dlbl:'✅ Tersinkron'+(lastFbSync?' · '+lastFbSync:'')},
     err:      {cls:'err',      dlbl:'❌ Sync gagal — klik untuk cek'},
   };
   var s = states[state] || states.noconfig;
@@ -2636,13 +2636,10 @@ function toggleSidebar(){
 }
 
 function initSidebar(){
-  try{
-    var saved = localStorage.getItem(LS_SB_MINI);
-    if(saved==='1'){
-      sbMini = false; // toggle will flip it
-      toggleSidebar();
-    }
-  }catch(e){}
+  // Always start expanded (mini state not restored on open)
+  sbMini = false;
+  var toggleMini = document.getElementById('sbToggleMini');
+  if(toggleMini) toggleMini.style.display='none';
 }
 
 /* ══ INIT ══ */
