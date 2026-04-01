@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>MyCalendar</title>
+<title>FDSEK BI Kalsel Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -1163,7 +1163,7 @@ function renderCal(){
         }
         continue;
       }
-      var ev=evs.find(function(e){return e.id===evId;});
+      var ev=evs.find(function(e){return e.id===evId||String(e.id)===String(evId);});
       if(!ev) continue;
       if(shownCount>=MAX_ROWS){hiddenCount++;continue;}
       shownCount++;
@@ -1229,7 +1229,7 @@ function showDayPopup(dstr,filtered){
     var cat=CATS[ev.cat]||CATS[8];
     var dur=ev.dateEnd&&ev.dateEnd!==ev.dateStart?(' · s/d '+fmtDateShort(ev.dateEnd)):'';
     var time=ev.time?(ev.time+(ev.timeEnd?' – '+ev.timeEnd:''))+' &nbsp;':'';
-    return '<div class="dp-ev-item" onclick="closeM(\'dayOv\');showDet(evs.find(function(e){return e.id==='+ev.id+';}))">'+
+    return '<div class="dp-ev-item" onclick="closeM(\'dayOv\');showDet(evs.find(function(e){return String(e.id)===String('+ev.id+');}))">'+
       '<div class="dp-ev-dot" style="background:'+cat.color+'"></div>'+
       '<div class="dp-ev-info">'+
         '<div class="dp-ev-title">'+ev.title+'</div>'+
@@ -1696,7 +1696,7 @@ function deleteSelected(){
   if(titleEl) titleEl.textContent='Hapus '+ids.length+' kegiatan?';
   if(msgEl) msgEl.textContent='Semua kegiatan yang dipilih akan dihapus permanen dan tidak bisa dikembalikan.';
   if(okBtn) okBtn.onclick=function(){
-    evs=evs.filter(function(e){return !ids.some(function(id){return parseInt(id,10)===parseInt(e.id,10);});});
+    evs=evs.filter(function(e){return !ids.some(function(id){return String(id)===String(e.id);});});
     saveData();
     clearSelection();
     closeConfirm();
@@ -1914,8 +1914,7 @@ function saveEv(){
 
 /* ══ EDIT / DELETE from matrix ══ */
 function editEvById(id){
-  id=parseInt(id,10);
-  var ev=evs.find(function(e){return e.id===id;});
+  var ev=evs.find(function(e){return String(e.id)===String(id);});
   if(!ev) return;
   // close detail if open
   closeM('detOv');
@@ -1939,8 +1938,7 @@ function editEvById(id){
   var _ao=document.getElementById('addOv');if(_ao)_ao.style.display='flex';
 }
 function delEvById(id){
-  id=parseInt(id,10);
-  var ev=evs.find(function(e){return e.id===id;});
+  var ev=evs.find(function(e){return String(e.id)===String(id);});
   if(!ev) return;
   var titleEl=document.getElementById('confirmTitle');
   var msgEl=document.getElementById('confirmMsg');
@@ -1948,7 +1946,7 @@ function delEvById(id){
   if(titleEl) titleEl.textContent='Hapus "'+ev.title+'"?';
   if(msgEl) msgEl.textContent='Kegiatan ini akan dihapus permanen dan tidak bisa dikembalikan.';
   if(okBtn) okBtn.onclick=function(){
-    evs=evs.filter(function(e){return e.id!==id&&parseInt(e.id,10)!==parseInt(id,10);});
+    evs=evs.filter(function(e){return String(e.id)!==String(id);});
     saveData();
     closeConfirm();
     closeM('detOv');
@@ -2292,19 +2290,20 @@ function openFbConfig(){
 }
 
 function saveFbConfig(){
-  var el=document.getElementById('fbUrlInput'); var url=(el?el.value||'':'').trim().replace(/\/+$/,'');
+  var el=document.getElementById('fbUrlInput');
+  var url=(el?el.value||'':'').trim().replace(/\/+$/,'');
   if(!url){ showToast('⚠️ URL tidak boleh kosong'); return; }
   if(!url.startsWith('https://')){ showToast('⚠️ URL harus diawali https://'); return; }
   fbDbUrl   = url;
   fbEnabled = true;
   try{ localStorage.setItem(LS_FB_URL, url); }catch(e){}
   closeM('fbCfgOv');
-  showToast('🔥 Firebase aktif! Menyinkronkan data...');
+  showToast('🔥 Firebase aktif! Menyinkronkan...');
+  // Push local data first, then start auto-pull
   fbPush(function(ok){
-    if(ok) fbSetStatus('ok', nowHMS());
-    else   fbSetStatus('err');
+    if(ok){ fbSetStatus('ok', nowHMS()); fbStartAutoSync(); }
+    else { fbSetStatus('err'); fbStartAutoSync(); } // still start auto-pull
   });
-  fbStartAutoSync();
 }
 
 function disableFb(){
@@ -2318,9 +2317,9 @@ function disableFb(){
 
 function loadFbConfig(){
   try{
-    var url = localStorage.getItem(LS_FB_URL) || '';
-    fbDbUrl   = url.trim();
-    fbEnabled = !!fbDbUrl;
+    var url = (localStorage.getItem(LS_FB_URL) || '').trim().replace(/\/+$/,'');
+    fbDbUrl   = url;
+    fbEnabled = !!url;
   }catch(e){ fbEnabled = false; }
   fbSetStatus(fbEnabled ? 'ok' : 'noconfig');
 }
@@ -2358,7 +2357,10 @@ function fbPull(cb){
     if(d.nid && parseInt(d.nid, 10) > nid) nid = parseInt(d.nid, 10);
     lastFbSync = nowHMS();
     fbSetStatus('ok', lastFbSync);
-    if(changed){ buildFilter(); buildMini(); renderCal(); refreshMatrix(); }
+    if(changed){
+      buildFilter(); buildMini(); renderCal(); refreshMatrix();
+      console.log('✅ Calendar updated from Firebase at '+lastFbSync);
+    }
     if(cb) cb(true);
   });
 }
@@ -2457,14 +2459,18 @@ function loadData(){
 }
 
 /* ══ INIT ══ */
-loadData();
-loadFbConfig();
-buildFilter(); buildMini(); renderCal();
+loadData();         // 1. Load from localStorage first (instant)
+loadFbConfig();     // 2. Load Firebase config
+buildFilter(); buildMini(); renderCal(); // 3. Render with local data
 if(fbEnabled){
+  // 4. Pull from Firebase → overrides local data if newer
   fbPull(function(ok){
-    if(ok) console.log('✅ Data pulled from Firebase');
+    if(ok){
+      console.log('✅ Data pulled from Firebase on startup');
+      buildFilter(); buildMini(); renderCal(); refreshMatrix();
+    }
   });
-  fbStartAutoSync();
+  fbStartAutoSync(); // 5. Auto-pull every 20s
 }
 </script>
 </body>
