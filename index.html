@@ -19,18 +19,17 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .sb.mini .sb-header{padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:8px;}
 .sb.mini .logo{justify-content:center;margin-bottom:0;}
 .sb.mini .logo-name{display:none;}
-.sb.mini .logo-box{width:36px;height:36px;border-radius:10px;font-size:18px;}
+.sb.mini .logo-box{width:28px;height:28px;border-radius:9px;font-size:15px;}
 
 /* Mini: add button → icon only */
-.sb.mini .add-btn{width:40px;height:40px;padding:0;border-radius:12px;justify-content:center;margin:0 auto;display:flex;align-items:center;}
+.sb.mini .add-btn{width:28px;height:28px;padding:0;border-radius:9px;justify-content:center;margin:0 auto;display:flex;align-items:center;}
 .sb.mini .add-btn .add-text{display:none;}
 
 /* Mini: firebase dot */
-.sb.mini .fb-status{padding:6px 0;justify-content:center;border-radius:0;margin:0;width:100%;background:none !important;border:none !important;}
-.sb.mini .fb-status .fb-icon{width:40px;height:40px;border-radius:12px;margin:0 auto;}
-.sb.mini .fb-status .fb-icon svg{width:18px;height:18px;}
+.sb.mini .fb-status{padding:0;margin:0;justify-content:center;background:none !important;border:none !important;width:28px;height:28px;border-radius:9px;margin:0 auto;}
 .sb.mini .fb-status #fbLabel{display:none;}
-.sb.mini .fb-icon{font-size:20px;background:none !important;}
+.sb.mini .fb-icon{font-size:15px;width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.sb.mini .fb-icon{background:#FFF7ED !important;border:1.5px solid #FED7AA !important;}
 
 /* Mini: toggle */
 .sb-toggle{width:28px;height:28px;border-radius:8px;background:none;border:1px solid #E2E8F0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94A3B8;font-size:11px;transition:all .15s;flex-shrink:0;}
@@ -38,9 +37,9 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .sb-mini-toggle{position:absolute;top:50%;left:64px;transform:translateY(-50%);width:18px;height:40px;background:#fff;border:1px solid #E2E8F0;border-left:none;border-radius:0 8px 8px 0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#94A3B8;font-size:10px;z-index:10;transition:all .15s;box-shadow:2px 0 6px rgba(0,0,0,.06);}
 .sb-mini-toggle:hover{background:#F8FAFC;color:#334155;}
 /* Mini sidebar icon buttons */
-.sb.mini .add-btn svg{width:18px;height:18px;}
+.sb.mini .add-btn svg{width:15px;height:15px;}
 .sb.mini .logo-box{cursor:default;}
-.sb-header{padding:18px 16px 12px;}
+.sb-header{padding:18px 14px 12px;}
 .logo{display:flex;align-items:center;gap:9px;margin-bottom:14px;}
 .logo-box{width:40px;height:40px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .logo-name{font-size:12px;font-weight:600;color:#0F172A;letter-spacing:-0.2px;line-height:1.3;}
@@ -357,21 +356,13 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .ac-no-result{padding:10px 12px;font-size:12px;color:#94A3B8;text-align:center;font-style:italic;}
 
 /* FIREBASE SYNC UI */
-.fb-status{margin:0 14px 10px;padding:9px 12px;border-radius:10px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .2s;}
+.fb-status{margin:0 14px 10px;padding:9px 14px;border-radius:10px;font-size:11px;font-weight:500;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .2s;}
 .fb-status.ok{background:#ECFDF5;border:1px solid #6EE7B7;color:#065F46;}
 .fb-status.err{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;}
 .fb-status.syncing{background:#EFF6FF;border:1px solid #BFDBFE;color:#1D4ED8;}
 .fb-status.noconfig{background:#F8FAFC;border:1px solid #E2E8F0;color:#64748B;}
-.fb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.fb-dot.ok{background:#10B981;}
-.fb-dot.err{background:#EF4444;}
-.fb-dot.syncing{background:#3B82F6;animation:fbpulse .8s infinite alternate;}
-.fb-dot.noconfig{background:#CBD5E1;}
-.fb-icon{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px;line-height:1;background:none;}
-.fb-icon.ok{background:none;}
-.fb-icon.err{background:none;}
-.fb-icon.syncing{background:none;}
-.fb-icon.noconfig{background:none;}
+
+.fb-icon{font-size:18px;line-height:1;flex-shrink:0;display:flex;align-items:center;background:none;border:none;}
 @keyframes fbpulse{from{opacity:.3;}to{opacity:1;}}
 @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -453,12 +444,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
   </div>
   <!-- Firebase sync status -->
   <div class="fb-status noconfig" id="fbStatus" onclick="openFbConfig()" title="Klik untuk konfigurasi Firebase">
-    <div class="fb-icon" id="fbDot">
-      <!-- icon changes per state via JS -->
-      <svg id="fbIconSvg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2C8 8 6 12 6 15a6 6 0 0 0 12 0c0-3-2-7-6-13z"/>
-      </svg>
-    </div>
+    <div class="fb-icon noconfig" id="fbDot">🔥</div>
     <span id="fbLabel">Firebase belum dikonfigurasi</span>
   </div>
   <div class="mc-wrap sb-hide">
