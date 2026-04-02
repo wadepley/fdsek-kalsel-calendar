@@ -3207,14 +3207,41 @@ function saveSurvei(){
 function openKelolaSurvei(){
   var list=document.getElementById('kelolaList');
   list.innerHTML='';
+  if(!surveiList.length){
+    list.innerHTML='<div style="text-align:center;padding:20px;color:#94A3B8;font-size:12px;">Belum ada survei.</div>';
+  }
   surveiList.forEach(function(s){
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;';
-    row.innerHTML=
-      '<div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#0F172A;">'+s.nama+'</div>'+
-      '<div style="font-size:10px;color:#94A3B8;">'+s.label+' · '+s.jenis+'</div></div>'+
-      '<button data-eid="'+s.id+'" class="kelola-edit-btn" style="padding:4px 10px;border-radius:6px;border:1px solid #E2E8F0;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">✏️ Edit</button>'+
-      '<button data-did="'+s.id+'" class="kelola-del-btn" style="padding:4px 10px;border-radius:6px;border:1px solid #FECACA;background:#FEF2F2;color:#EF4444;font-size:11px;cursor:pointer;font-family:inherit;">🗑</button>';
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #F1F5F9;';
+
+    var info=document.createElement('div');
+    info.style.flex='1';
+    info.innerHTML=
+      '<div style="font-size:12px;font-weight:600;color:#0F172A;">'+s.nama+'</div>'+
+      '<div style="font-size:10px;color:#94A3B8;">'+s.label+' · <b style="color:#475569;">'+s.jenis+'</b></div>';
+
+    var editBtn=document.createElement('button');
+    editBtn.textContent='✏️ Edit';
+    editBtn.style.cssText='padding:5px 12px;border-radius:7px;border:1px solid #E2E8F0;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;color:#334155;white-space:nowrap;';
+
+    var delBtn=document.createElement('button');
+    delBtn.textContent='🗑 Hapus';
+    delBtn.style.cssText='padding:5px 12px;border-radius:7px;border:1px solid #FECACA;background:#FEF2F2;color:#EF4444;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;';
+
+    // Closure to capture correct survei id
+    (function(sid){
+      editBtn.onclick=function(){
+        closeM('kelolaOv');
+        openAddSurvei(sid);
+      };
+      delBtn.onclick=function(){
+        deleteSurvei(sid);
+      };
+    })(s.id);
+
+    row.appendChild(info);
+    row.appendChild(editBtn);
+    row.appendChild(delBtn);
     list.appendChild(row);
   });
   document.getElementById('kelolaOv').style.display='flex';
