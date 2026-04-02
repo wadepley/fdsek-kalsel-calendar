@@ -2841,39 +2841,34 @@ function saveSpkForSurvei(sid,spkDate,noSpk){
 }
 
 function cellStatus(entry, jenis, m, sid){
-  // m = 0-indexed month
   if(jenis==='triwulanan' && TW_BULAN.indexOf(m)<0) return 'na';
-  // Check SPK from survei-level data
-  var spkData=sid?getSpkForSurvei(sid):{spk:''};
-  var hasSpk=!!(spkData.spk||(entry&&entry.spk));
-  if(!hasSpk) return 'kosong';
-  if(!entry) return 'kosong';
+  // Belum diisi = belum ada tagihan kirim (SPK tidak dihitung sebagai progress)
+  if(!entry || !entry.tagihanKirim) return 'kosong';
+  // Sudah lunas
   if(entry.bayar) return 'lunas';
-  // Check overdue: if any step missing for too long
+  // Overdue check — hanya berlaku setelah tagihan dikirim
   var now=new Date();
-  function daysSince(dateStr){
-    if(!dateStr) return 0;
-    return Math.floor((now-new Date(dateStr))/(1000*60*60*24));
-  }
+  function daysSince(d){ return d?Math.floor((now-new Date(d))/(1000*60*60*24)):0; }
   if(entry.tagihanKirim && !entry.tagihanTerima && daysSince(entry.tagihanKirim)>OVERDUE_DAYS) return 'overdue';
-  if(entry.tagihanTerima && !entry.mo2 && daysSince(entry.tagihanTerima)>OVERDUE_DAYS) return 'overdue';
-  if(entry.mo2 && !entry.ldp && daysSince(entry.mo2)>OVERDUE_DAYS) return 'overdue';
-  if(entry.ldp && !entry.bayar && daysSince(entry.ldp)>OVERDUE_DAYS) return 'overdue';
+  if(entry.tagihanTerima && !entry.mo2     && daysSince(entry.tagihanTerima)>OVERDUE_DAYS) return 'overdue';
+  if(entry.mo2           && !entry.ldp     && daysSince(entry.mo2)>OVERDUE_DAYS) return 'overdue';
+  if(entry.ldp           && !entry.bayar   && daysSince(entry.ldp)>OVERDUE_DAYS) return 'overdue';
+  // Dalam proses = tagihan sudah dikirim
   return 'proses';
 }
 
 function cellLabel(entry, status){
-  if(status==='na') return {icon:'',date:'',step:''};
-  if(status==='kosong') return {icon:'+',date:'',step:''};
-  if(status==='lunas')  return {icon:'✅',date:fmtShort(entry.bayar),step:'Terbayar'};
+  if(status==='na')     return {icon:'',   date:'',   step:''};
+  if(status==='kosong') return {icon:'+',  date:'',   step:''};
+  if(status==='lunas')  return {icon:'✅', date:fmtShort(entry.bayar), step:'Terbayar'};
   if(status==='overdue'){
     var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':''));
-    return {icon:'⚠️',date:step,step:'Overdue'};
+    return {icon:'⚠️', date:step, step:'Overdue'};
   }
-  // proses
-  var step=!entry.tagihanKirim?'SPK':(!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':'')));
-  var date=entry.ldp||entry.mo2||entry.tagihanTerima||entry.tagihanKirim||entry.spk||'';
-  return {icon:'⏳',date:fmtShort(date),step:step};
+  // proses — tampilkan step yang sedang berjalan
+  var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':''));
+  var date=entry.ldp||entry.mo2||entry.tagihanTerima||entry.tagihanKirim||'';
+  return {icon:'⏳', date:fmtShort(date), step:step};
 }
 
 function fmtShort(dateStr){
@@ -3050,16 +3045,33 @@ function openStepModal(sid, y, m){
   var pipeline=document.createElement('div');
   pipeline.className='step-pipeline';
 
-  function mkCol(num, label, fields){
-    // fields: array of {label, field, val, type}
+  function mkCol(num, label, fields, clearable){
     var col=document.createElement('div');
     col.className='step-col';
     var isDone=fields.some(function(f){return !!f.val;});
-    var head='<div class="step-col-head">'+
-      '<div class="step-num'+(isDone?' done':'')+'">'+num+'</div>'+
-      '<div class="step-label">'+label+'</div>'+
-      '</div>';
-    col.innerHTML=head;
+    // Header with optional clear button
+    var headDiv=document.createElement('div');
+    headDiv.className='step-col-head';
+    headDiv.style.justifyContent='space-between';
+    var headLeft=document.createElement('div');
+    headLeft.style.cssText='display:flex;align-items:center;gap:6px;';
+    headLeft.innerHTML='<div class="step-num'+(isDone?' done':'')+'">'+num+'</div>'+
+      '<div class="step-label">'+label+'</div>';
+    headDiv.appendChild(headLeft);
+    if(clearable!==false){
+      var clearBtn=document.createElement('button');
+      clearBtn.textContent='✕ Clear';
+      clearBtn.title='Hapus isian step ini';
+      clearBtn.style.cssText='font-size:9px;color:#94A3B8;background:none;border:1px solid #E2E8F0;border-radius:5px;padding:2px 6px;cursor:pointer;font-family:inherit;white-space:nowrap;';
+      clearBtn.onmouseover=function(){this.style.color='#EF4444';this.style.borderColor='#FECACA';};
+      clearBtn.onmouseout=function(){this.style.color='#94A3B8';this.style.borderColor='#E2E8F0';};
+      clearBtn.onclick=function(){
+        col.querySelectorAll('input[data-field]').forEach(function(inp){inp.value='';});
+        headLeft.querySelector('.step-num').className='step-num';
+      };
+      headDiv.appendChild(clearBtn);
+    }
+    col.appendChild(headDiv);
     fields.forEach(function(f){
       var wrap=document.createElement('div');
       if(f.label){
@@ -3075,6 +3087,11 @@ function openStepModal(sid, y, m){
       if(f.field) inp.dataset.field=f.field;
       if(f.placeholder) inp.placeholder=f.placeholder;
       if(f.id) inp.id=f.id;
+      // Update step-num when cleared/filled
+      inp.oninput=function(){
+        var filled=Array.from(col.querySelectorAll('input[data-field]')).some(function(i){return i.value;});
+        headLeft.querySelector('.step-num').className='step-num'+(filled?' done':'');
+      };
       wrap.appendChild(inp);
       col.appendChild(wrap);
     });
@@ -3086,10 +3103,21 @@ function openStepModal(sid, y, m){
     {label:'Tanggal', id:'spkDateInput', val:spkData.spk, type:'date'},
     {label:'No. SPK', id:'spkNoInput', val:spkData.noSpk, type:'text', placeholder:'Nomor SPK...'},
   ]);
+  // SPK clear button (clears survei-level SPK)
+  var spkClearBtn=document.createElement('button');
+  spkClearBtn.textContent='✕ Clear SPK';
+  spkClearBtn.style.cssText='font-size:9px;color:#94A3B8;background:none;border:1px solid #E2E8F0;border-radius:5px;padding:2px 6px;cursor:pointer;font-family:inherit;margin-top:4px;';
+  spkClearBtn.onmouseover=function(){this.style.color='#EF4444';this.style.borderColor='#FECACA';};
+  spkClearBtn.onmouseout=function(){this.style.color='#94A3B8';this.style.borderColor='#E2E8F0';};
+  spkClearBtn.onclick=function(){
+    document.getElementById('spkDateInput').value='';
+    document.getElementById('spkNoInput').value='';
+  };
   var spkHint=document.createElement('div');
   spkHint.className='step-hint';
-  spkHint.textContent='💡 Sekali simpan untuk semua periode';
+  spkHint.innerHTML='💡 Sekali simpan untuk semua periode';
   spkCol.appendChild(spkHint);
+  spkCol.appendChild(spkClearBtn);
   pipeline.appendChild(spkCol);
 
   // Col 2: Tagihan
