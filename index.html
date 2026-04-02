@@ -416,6 +416,52 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .cp-swatch:hover{transform:scale(1.15);border-color:#334155;}
 .cp-swatch.selected{border-color:#0F172A;transform:scale(1.1);}
 .cat-in-use{font-size:9px;color:#94A3B8;white-space:nowrap;}
+
+/* ══ PAYMENT TRACKING ══ */
+.pay-table{border-collapse:collapse;width:100%;min-width:800px;font-family:'DM Sans',sans-serif;}
+.pay-table thead th{background:#F8FAFC;font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;padding:10px 8px;border-bottom:2px solid #E2E8F0;border-right:1px solid #F1F5F9;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:3;}
+.pay-table thead th.col-survei{text-align:left;min-width:180px;position:sticky;left:0;z-index:4;background:#F8FAFC;}
+.pay-table td{padding:0;border-bottom:1px solid #F1F5F9;border-right:1px solid #F1F5F9;}
+.pay-table td.col-survei{padding:10px 14px;font-size:12px;font-weight:600;color:#0F172A;position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap;border-right:2px solid #E2E8F0;}
+.pay-table td.col-survei .sub{font-size:10px;font-weight:400;color:#94A3B8;margin-top:2px;}
+.pay-table tr:hover td{background:#FAFBFE;}
+.pay-table tr:hover td.col-survei{background:#FAFBFE;}
+.pay-table .group-hdr td{background:#F1F5F9;padding:7px 14px;font-size:10px;font-weight:700;color:#64748B;letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid #E2E8F0;border-top:2px solid #E2E8F0;}
+/* Pay cell */
+.pay-cell{width:100%;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px;padding:6px 4px;transition:filter .12s;}
+.pay-cell:hover{filter:brightness(.94);}
+.pay-cell .pc-icon{font-size:14px;line-height:1;}
+.pay-cell .pc-date{font-size:9px;font-weight:600;line-height:1.2;}
+.pay-cell .pc-step{font-size:8px;line-height:1.2;opacity:.8;}
+.pay-cell.lunas{background:#ECFDF5;}.pay-cell.lunas .pc-date,.pay-cell.lunas .pc-step{color:#065F46;}
+.pay-cell.proses{background:#FEFCE8;}.pay-cell.proses .pc-date,.pay-cell.proses .pc-step{color:#854D0E;}
+.pay-cell.overdue{background:#FEF2F2;}.pay-cell.overdue .pc-date,.pay-cell.overdue .pc-step{color:#991B1B;}
+.pay-cell.kosong{background:#F8FAFC;}.pay-cell.kosong .pc-icon{color:#CBD5E1;font-size:16px;}
+.pay-cell.na{background:#F8FAFC;cursor:default;}
+.pay-cell.na .pc-icon{font-size:10px;color:#CBD5E1;font-weight:500;}
+/* Step modal */
+.step-modal{background:#fff;border-radius:14px;width:860px;max-width:96vw;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;}
+.step-modal-header{padding:12px 18px;border-bottom:1px solid #F1F5F9;display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;}
+.step-modal-title{font-size:14px;font-weight:600;color:#0F172A;}
+.step-modal-sub{font-size:10px;color:#94A3B8;margin-top:1px;}
+/* Pipeline horizontal row */
+.step-pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid #F1F5F9;}
+.step-col{padding:12px 14px;border-right:1px solid #F1F5F9;display:flex;flex-direction:column;gap:6px;}
+.step-col:last-child{border-right:none;}
+.step-col-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.step-num{width:20px;height:20px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#64748B;flex-shrink:0;}
+.step-num.done{background:#D1FAE5;color:#065F46;}
+.step-label{font-size:11px;font-weight:600;color:#334155;line-height:1.3;}
+.step-sub-label{font-size:9px;color:#94A3B8;white-space:nowrap;}
+.step-input{padding:5px 8px;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:#334155;background:#F8FAFC;width:100%;transition:border-color .15s;}
+.step-input:focus{outline:none;border-color:#3B82F6;background:#fff;}
+/* Bottom row: SPK info + nominal + note */
+.step-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid #F1F5F9;}
+.step-bottom-col{padding:10px 14px;border-right:1px solid #F1F5F9;}
+.step-bottom-col:last-child{border-right:none;}
+.step-note{padding:5px 8px;border:1.5px solid #E2E8F0;border-radius:7px;font-size:11px;font-family:'DM Sans',sans-serif;color:#334155;width:100%;resize:none;background:#F8FAFC;height:52px;}
+.step-note:focus{outline:none;border-color:#3B82F6;background:#fff;}
+.step-hint{font-size:9px;color:#94A3B8;margin-top:2px;line-height:1.4;}
 </style>
 </head>
 <body>
@@ -493,6 +539,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
     <div class="tab-item active" id="tab-cal" onclick="switchTab('cal')">📅 Kalender</div>
     <div class="tab-item" id="tab-kegiatan" onclick="switchTab('kegiatan')">📋 Matriks Kegiatan</div>
     <div class="tab-item" id="tab-orang" onclick="switchTab('orang')">👥 Matriks per Orang</div>
+    <div class="tab-item" id="tab-bayar" onclick="switchTab('bayar')">💳 Tracking Pembayaran</div>
   </div>
 
   <!-- TOPBAR always visible, outside all view panels -->
@@ -596,7 +643,93 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
       <div id="orangContent"></div>
     </div>
   </div>
+
+  <!-- ══ VIEW: TRACKING PEMBAYARAN ══ -->
+  <div id="view-bayar" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+    <div class="matrix-wrap">
+      <div class="mx-top">
+        <div class="mx-title">💳 Tracking Pembayaran Survei</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-s" style="background:#10B981;font-size:11px;padding:5px 12px;" onclick="openAddSurvei()">＋ Tambah Pembayaran</button>
+          <button class="btn-s" style="background:#6366F1;font-size:11px;padding:5px 12px;" onclick="openKelolaSurvei()">⚙️ Kelola</button>
+        </div>
+      </div>
+      <div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
+        <span class="fb-label">📆 Tahun:</span>
+        <button class="fb-yn" onclick="bayarYNav(-1)">‹</button>
+        <span class="fb-y" id="bayarY"></span>
+        <button class="fb-yn" onclick="bayarYNav(1)">›</button>
+        <div style="width:1px;height:18px;background:#E2E8F0;margin:0 4px;"></div>
+        <span class="fb-label">Jenis:</span>
+        <div class="fb-chips" id="bayarJenisChips"></div>
+      </div>
+      <div class="sum-grid" id="bayarSumGrid" style="grid-template-columns:repeat(5,1fr);"></div>
+      <div style="display:flex;gap:14px;align-items:center;padding:8px 16px;background:#FAFBFC;border:1px solid #F1F5F9;border-radius:8px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#D1FAE5;"></div>Lunas</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEF9C3;"></div>Proses</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEE2E2;"></div>Overdue</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#F8FAFC;border:1px solid #E2E8F0;"></div>Belum Diisi</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#F1F5F9;"></div>N/A</div>
+        <span style="margin-left:auto;font-size:10px;color:#94A3B8;">💡 Klik sel untuk input detail step pembayaran</span>
+      </div>
+      <div class="tbl-wrap" style="overflow-x:auto;"><div id="bayarMatrix"></div></div>
+    </div>
+  </div>
+
 </div>
+</div>
+
+<!-- STEP DETAIL MODAL -->
+<div class="ov" id="stepOv" style="display:none;" onclick="ovClose(event,'stepOv')">
+  <div class="step-modal" onclick="event.stopPropagation()">
+    <div class="step-modal-header">
+      <div>
+        <div class="step-modal-title" id="stepModalTitle">Detail Pembayaran</div>
+        <div class="step-modal-sub">5 step pipeline pembayaran survei</div>
+      </div>
+      <button class="xb" onclick="closeM('stepOv')">✕</button>
+    </div>
+    <div id="stepModalBody"></div>
+    <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid #F1F5F9;">
+      <button id="stepSaveBtn" class="btn-s" style="background:#3B82F6;flex:1;">💾 Simpan</button>
+      <button onclick="closeM('stepOv')" class="btn-s" style="background:#F1F5F9;color:#334155;">Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SURVEI MODAL -->
+<div class="ov" id="surveiOv" style="display:none;" onclick="ovClose(event,'surveiOv')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;">
+    <div class="mh">
+      <span class="mt" id="surveiModalTitle">Tambah Survei</span>
+      <button class="xb" onclick="closeM('surveiOv')">✕</button>
+    </div>
+    <input type="hidden" id="surveiEditId"/>
+    <div class="fg"><label class="fl">Nama/Kode Survei *</label><input class="fi" id="surveiNama" placeholder="contoh: SKDU"/></div>
+    <div class="fg"><label class="fl">Keterangan Lengkap</label><input class="fi" id="surveiLabel" placeholder="contoh: Survei Kegiatan Dunia Usaha"/></div>
+    <div class="fg"><label class="fl">Jenis Survei *</label>
+      <select class="fi" id="surveiJenis"><option value="bulanan">Bulanan</option><option value="triwulanan">Triwulanan</option></select>
+    </div>
+    <div class="mf">
+      <button class="btn-c" onclick="closeM('surveiOv')">Batal</button>
+      <button class="btn-s" onclick="saveSurvei()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- KELOLA SURVEI MODAL -->
+<div class="ov" id="kelolaOv" style="display:none;" onclick="ovClose(event,'kelolaOv')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px;">
+    <div class="mh">
+      <span class="mt">⚙️ Kelola Daftar Survei</span>
+      <button class="xb" onclick="closeM('kelolaOv')">✕</button>
+    </div>
+    <div style="padding:0 16px 8px;max-height:360px;overflow-y:auto;"><div id="kelolaList"></div></div>
+    <div class="mf">
+      <button class="btn-c" onclick="closeM('kelolaOv')">Tutup</button>
+      <button class="btn-s" onclick="closeM('kelolaOv');openAddSurvei()">＋ Tambah Baru</button>
+    </div>
+  </div>
 </div>
 
 <!-- ADD / EDIT MODAL -->
@@ -1472,7 +1605,7 @@ function switchTab(tab){
   curTab=tab;
   var topbar=document.querySelector('.topbar');
   if(topbar) topbar.style.display=(tab==='cal')?'grid':'none';
-  ['cal','kegiatan','orang'].forEach(function(t){
+  ['cal','kegiatan','orang','bayar'].forEach(function(t){
     var el=document.getElementById('view-'+t);
     if(!el) return;
     var isActive=(t===tab);
@@ -1485,6 +1618,7 @@ function switchTab(tab){
   });
   if(tab==='kegiatan'){clearSelection();buildKMatrix();}
   if(tab==='orang') renderOrang();
+  if(tab==='bayar') renderBayar();
 }
 function switchKtab(t){
   ktab=t;
@@ -2628,8 +2762,480 @@ function initSidebar(){
   if(toggleMini) toggleMini.style.display='none';
 }
 
+
+/* ══════════════════════════════════════════════════
+   TRACKING PEMBAYARAN SURVEI
+   ══════════════════════════════════════════════════ */
+
+/* --- Data --- */
+var LS_SURVEI   = 'fdsek_survei_list';
+var LS_BAYAR    = 'fdsek_bayar_data';
+var bayarYear   = new Date().getFullYear();
+var bayarJenis  = 'semua'; // 'semua' | 'bulanan' | 'triwulanan'
+var OVERDUE_DAYS = 14; // hari batas overdue per step
+
+var BULAN_SINGKAT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+var TW_BULAN = [2,5,8,11]; // Mar,Jun,Sep,Des (0-indexed) = bulan terakhir tiap triwulan
+
+/* Default survei list */
+var surveiList = [];
+var bayarData  = {}; // key: "surveiId_yyyy_mm" → {spk, tagihanKirim, tagihanTerima, mo2, ldp, bayar, note}
+
+function loadBayarData(){
+  try{
+    var s=localStorage.getItem(LS_SURVEI);
+    if(s){ var p=JSON.parse(s); if(p&&p.length) surveiList=p; }
+    var b=localStorage.getItem(LS_BAYAR);
+    if(b){ var q=JSON.parse(b); if(q) bayarData=q; }
+  }catch(e){}
+  if(!surveiList.length){
+    surveiList=[
+      {id:'skdu',  nama:'SKDU',  label:'Survei Kegiatan Dunia Usaha',    jenis:'bulanan'},
+      {id:'sppr',  nama:'SPPR',  label:'Survei Penjualan Properti',       jenis:'bulanan'},
+      {id:'skpwdn',nama:'SKPwDN',label:'Survei Konsumen',                 jenis:'bulanan'},
+      {id:'sbbt',  nama:'SBBT',  label:'Survei Bank & Non-Bank',          jenis:'triwulanan'},
+      {id:'spe',   nama:'SPE',   label:'Survei Pelaksana Survei',         jenis:'triwulanan'},
+    ];
+    saveBayarData();
+  }
+}
+
+function saveBayarData(){
+  try{
+    localStorage.setItem(LS_SURVEI, JSON.stringify(surveiList));
+    localStorage.setItem(LS_BAYAR,  JSON.stringify(bayarData));
+  }catch(e){}
+  // Push to Firebase
+  if(fbEnabled&&fbDbUrl){
+    var payload={surveiList:surveiList,bayarData:bayarData,updated:Date.now()};
+    fbReq('/bayardata','PUT',payload,function(){});
+  }
+}
+
+function loadBayarFromFb(cb){
+  if(!fbEnabled||!fbDbUrl){if(cb)cb();return;}
+  fbReq('/bayardata','GET',undefined,function(err,d){
+    if(!err&&d){
+      if(d.surveiList&&d.surveiList.length) surveiList=d.surveiList;
+      if(d.bayarData) bayarData=d.bayarData;
+      try{
+        localStorage.setItem(LS_SURVEI,JSON.stringify(surveiList));
+        localStorage.setItem(LS_BAYAR,JSON.stringify(bayarData));
+      }catch(e){}
+    }
+    if(cb)cb();
+  });
+}
+
+/* --- Helpers --- */
+function bayarKey(id,y,m){ return id+'_'+y+'_'+m; }
+function getBayarEntry(id,y,m){ return bayarData[bayarKey(id,y,m)]||{}; }
+
+function getSpkForSurvei(sid){
+  var s=surveiList.find(function(x){return x.id===sid;});
+  return s?{spk:s.spkDate||'',noSpk:s.noSpk||''}:{spk:'',noSpk:''};
+}
+function saveSpkForSurvei(sid,spkDate,noSpk){
+  var s=surveiList.find(function(x){return x.id===sid;});
+  if(s){s.spkDate=spkDate;s.noSpk=noSpk;}
+}
+
+function cellStatus(entry, jenis, m, sid){
+  // m = 0-indexed month
+  if(jenis==='triwulanan' && TW_BULAN.indexOf(m)<0) return 'na';
+  // Check SPK from survei-level data
+  var spkData=sid?getSpkForSurvei(sid):{spk:''};
+  var hasSpk=!!(spkData.spk||(entry&&entry.spk));
+  if(!hasSpk) return 'kosong';
+  if(!entry) return 'kosong';
+  if(entry.bayar) return 'lunas';
+  // Check overdue: if any step missing for too long
+  var now=new Date();
+  function daysSince(dateStr){
+    if(!dateStr) return 0;
+    return Math.floor((now-new Date(dateStr))/(1000*60*60*24));
+  }
+  if(entry.tagihanKirim && !entry.tagihanTerima && daysSince(entry.tagihanKirim)>OVERDUE_DAYS) return 'overdue';
+  if(entry.tagihanTerima && !entry.mo2 && daysSince(entry.tagihanTerima)>OVERDUE_DAYS) return 'overdue';
+  if(entry.mo2 && !entry.ldp && daysSince(entry.mo2)>OVERDUE_DAYS) return 'overdue';
+  if(entry.ldp && !entry.bayar && daysSince(entry.ldp)>OVERDUE_DAYS) return 'overdue';
+  return 'proses';
+}
+
+function cellLabel(entry, status){
+  if(status==='na') return {icon:'',date:'',step:''};
+  if(status==='kosong') return {icon:'+',date:'',step:''};
+  if(status==='lunas')  return {icon:'✅',date:fmtShort(entry.bayar),step:'Terbayar'};
+  if(status==='overdue'){
+    var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':''));
+    return {icon:'⚠️',date:step,step:'Overdue'};
+  }
+  // proses
+  var step=!entry.tagihanKirim?'SPK':(!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':'')));
+  var date=entry.ldp||entry.mo2||entry.tagihanTerima||entry.tagihanKirim||entry.spk||'';
+  return {icon:'⏳',date:fmtShort(date),step:step};
+}
+
+function fmtShort(dateStr){
+  if(!dateStr) return '';
+  var d=new Date(dateStr+'T00:00:00');
+  return d.getDate()+' '+BULAN_SINGKAT[d.getMonth()];
+}
+
+/* --- Render --- */
+function bayarYNav(d){ bayarYear+=d; renderBayar(); }
+
+function renderBayar(){
+  // Year label
+  var yEl=document.getElementById('bayarY');
+  if(yEl) yEl.textContent=bayarYear;
+
+  // Jenis chips
+  var jc=document.getElementById('bayarJenisChips');
+  if(jc){
+    jc.innerHTML='';
+    ['semua','bulanan','triwulanan'].forEach(function(j){
+      var btn=document.createElement('button');
+      btn.className='fb-chip'+(j==='semua'?' all':'')+( j===bayarJenis?' active':'');
+      btn.textContent=j==='semua'?'Semua':j==='bulanan'?'Bulanan':'Triwulanan';
+      btn.onclick=function(){bayarJenis=j;renderBayar();};
+      jc.appendChild(btn);
+    });
+  }
+
+  // Filter survei by jenis
+  var shown=surveiList.filter(function(s){
+    return bayarJenis==='semua'||s.jenis===bayarJenis;
+  });
+
+  // Summary counts
+  var total=0,lunas=0,proses=0,overdue=0,kosong=0;
+  shown.forEach(function(s){
+    for(var m=0;m<12;m++){
+      if(s.jenis==='triwulanan'&&TW_BULAN.indexOf(m)<0) continue;
+      total++;
+      var entry=getBayarEntry(s.id,bayarYear,m);
+      var st=cellStatus(entry,s.jenis,m,s.id);
+      if(st==='lunas') lunas++;
+      else if(st==='overdue') overdue++;
+      else if(st==='proses') proses++;
+      else if(st==='kosong') kosong++;
+    }
+  });
+
+  var sg=document.getElementById('bayarSumGrid');
+  if(sg) sg.innerHTML=
+    '<div class="sum-card"><div class="sum-num" style="color:#6366F1">'+total+'</div><div class="sum-lbl">Total Entri</div></div>'+
+    '<div class="sum-card"><div class="sum-num" style="color:#10B981">'+lunas+'</div><div class="sum-lbl">✅ Lunas</div></div>'+
+    '<div class="sum-card"><div class="sum-num" style="color:#EAB308">'+proses+'</div><div class="sum-lbl">⏳ Proses</div></div>'+
+    '<div class="sum-card"><div class="sum-num" style="color:#EF4444">'+overdue+'</div><div class="sum-lbl">🔴 Overdue</div></div>'+
+    '<div class="sum-card"><div class="sum-num" style="color:#94A3B8">'+kosong+'</div><div class="sum-lbl">○ Belum Diisi</div></div>';
+
+  // Build matrix
+  var bm=document.getElementById('bayarMatrix');
+  if(!bm) return;
+
+  var tbl=document.createElement('table');
+  tbl.className='pay-table';
+
+  // Header row
+  var thead=document.createElement('thead');
+  var hrow=document.createElement('tr');
+  var th0=document.createElement('th');th0.className='col-survei';th0.textContent='Survei';
+  hrow.appendChild(th0);
+  for(var m=0;m<12;m++){
+    var th=document.createElement('th');
+    th.textContent=BULAN_SINGKAT[m];
+    if(m===new Date().getMonth()&&bayarYear===new Date().getFullYear()){
+      th.style.background='#EFF6FF';th.style.color='#1D4ED8';
+    }
+    hrow.appendChild(th);
+  }
+  thead.appendChild(hrow);
+  tbl.appendChild(thead);
+
+  // Body
+  var tbody=document.createElement('tbody');
+  var groups={bulanan:[],triwulanan:[]};
+  shown.forEach(function(s){ groups[s.jenis].push(s); });
+
+  function addGroup(label, list){
+    if(!list.length) return;
+    var gr=document.createElement('tr');gr.className='group-hdr';
+    var gtd=document.createElement('td');gtd.colSpan=13;gtd.textContent=label;
+    gr.appendChild(gtd);tbody.appendChild(gr);
+
+    list.forEach(function(s){
+      var row=document.createElement('tr');
+      // Survei name cell
+      var ntd=document.createElement('td');ntd.className='col-survei';
+      ntd.innerHTML='<div>'+s.nama+'</div><div class="sub">'+s.label+'</div>';
+      row.appendChild(ntd);
+      // Month cells
+      for(var m=0;m<12;m++){
+        var td=document.createElement('td');
+        if(s.jenis==='triwulanan'&&TW_BULAN.indexOf(m)<0){
+          td.innerHTML='<div class="pay-cell na"><div class="pc-icon">N/A</div></div>';
+        } else {
+          var entry=getBayarEntry(s.id,bayarYear,m);
+          var st=cellStatus(entry,s.jenis,m,s.id);
+          var lbl=cellLabel(entry,st);
+          var cell=document.createElement('div');
+          cell.className='pay-cell '+st;
+          cell.innerHTML=(lbl.icon?'<div class="pc-icon">'+lbl.icon+'</div>':'')+
+            (lbl.date?'<div class="pc-date">'+lbl.date+'</div>':'')+
+            (lbl.step?'<div class="pc-step">'+lbl.step+'</div>':'');
+          if(st!=='na'){
+            (function(sid,sy,sm){
+              cell.onclick=function(){openStepModal(sid,sy,sm);};
+            })(s.id,bayarYear,m);
+          }
+          td.appendChild(cell);
+        }
+        row.appendChild(td);
+      }
+      tbody.appendChild(row);
+    });
+  }
+
+  addGroup('📊 Survei Bulanan',groups.bulanan);
+  addGroup('📈 Survei Triwulanan',groups.triwulanan);
+  tbl.appendChild(tbody); // attach tbody to table
+
+  bm.innerHTML='';
+  bm.appendChild(tbl);
+}
+
+/* --- Step Detail Modal --- */
+function openStepModal(sid, y, m){
+  var s=surveiList.find(function(x){return x.id===sid;});
+  if(!s) return;
+  var entry=getBayarEntry(sid,y,m);
+  var periodLabel=(s.jenis==='triwulanan'?'Tw '+(TW_BULAN.indexOf(m)+1)+' ':BULAN_SINGKAT[m]+' ')+y;
+
+  var ov=document.getElementById('stepOv');
+  if(!ov) return;
+
+  function row(num, label, field, val, kirimField, kirimVal){
+    var isDone=!!val;
+    var inner='<div class="step-label">'+label+'</div>';
+    if(kirimField){
+      inner+='<div style="display:flex;gap:8px;margin-top:5px;align-items:center;">'+
+        '<span class="step-sub-label">Kirim:</span>'+
+        '<input type="date" class="step-input" data-field="'+kirimField+'" value="'+(kirimVal||'')+'"/>'+
+        '<span class="step-sub-label">Terima:</span>'+
+        '<input type="date" class="step-input" data-field="'+field+'" value="'+(val||'')+'"/>'+
+        '</div>';
+    } else {
+      inner+='<div style="margin-top:5px;">'+
+        '<input type="date" class="step-input" data-field="'+field+'" value="'+(val||'')+'" style="width:170px;"/>'+
+        '</div>';
+    }
+    return '<div class="step-row">'+
+      '<div class="step-num'+(isDone?' done':'')+'">'+num+'</div>'+
+      '<div style="flex:1;">'+inner+'</div>'+
+    '</div>';
+  }
+
+  // Load SPK from survei-level (persisted)
+  var spkData=getSpkForSurvei(sid);
+  var hasSpk=!!(spkData.spk||spkData.noSpk);
+
+  document.getElementById('stepModalTitle').textContent=s.nama+' — '+periodLabel;
+
+  var body=document.getElementById('stepModalBody');
+  body.innerHTML='';
+
+  // ── PIPELINE: 5 kolom horizontal ──
+  var pipeline=document.createElement('div');
+  pipeline.className='step-pipeline';
+
+  function mkCol(num, label, fields){
+    // fields: array of {label, field, val, type}
+    var col=document.createElement('div');
+    col.className='step-col';
+    var isDone=fields.some(function(f){return !!f.val;});
+    var head='<div class="step-col-head">'+
+      '<div class="step-num'+(isDone?' done':'')+'">'+num+'</div>'+
+      '<div class="step-label">'+label+'</div>'+
+      '</div>';
+    col.innerHTML=head;
+    fields.forEach(function(f){
+      var wrap=document.createElement('div');
+      if(f.label){
+        var lbl=document.createElement('div');
+        lbl.className='step-sub-label';
+        lbl.textContent=f.label;
+        wrap.appendChild(lbl);
+      }
+      var inp=document.createElement('input');
+      inp.type=f.type||'date';
+      inp.className='step-input';
+      inp.value=f.val||'';
+      if(f.field) inp.dataset.field=f.field;
+      if(f.placeholder) inp.placeholder=f.placeholder;
+      if(f.id) inp.id=f.id;
+      wrap.appendChild(inp);
+      col.appendChild(wrap);
+    });
+    return col;
+  }
+
+  // Col 1: SPK (persisted)
+  var spkCol=mkCol(1,'SPK',[
+    {label:'Tanggal', id:'spkDateInput', val:spkData.spk, type:'date'},
+    {label:'No. SPK', id:'spkNoInput', val:spkData.noSpk, type:'text', placeholder:'Nomor SPK...'},
+  ]);
+  var spkHint=document.createElement('div');
+  spkHint.className='step-hint';
+  spkHint.textContent='💡 Sekali simpan untuk semua periode';
+  spkCol.appendChild(spkHint);
+  pipeline.appendChild(spkCol);
+
+  // Col 2: Tagihan
+  pipeline.appendChild(mkCol(2,'Tagihan',[
+    {label:'Tgl Kirim', field:'tagihanKirim', val:entry.tagihanKirim},
+    {label:'Tgl Terima', field:'tagihanTerima', val:entry.tagihanTerima},
+  ]));
+
+  // Col 3: M02
+  pipeline.appendChild(mkCol(3,'M02',[
+    {label:'Tanggal', field:'mo2', val:entry.mo2},
+  ]));
+
+  // Col 4: LDP
+  pipeline.appendChild(mkCol(4,'LDP',[
+    {label:'Tanggal', field:'ldp', val:entry.ldp},
+  ]));
+
+  // Col 5: Terbayar
+  pipeline.appendChild(mkCol(5,'Terbayar',[
+    {label:'Tanggal', field:'bayar', val:entry.bayar},
+  ]));
+
+  body.appendChild(pipeline);
+
+  // ── BOTTOM ROW: SPK info display + Nominal + Catatan ──
+  var bottom=document.createElement('div');
+  bottom.className='step-bottom';
+
+  // SPK info (read-only display when already set)
+  var spkInfoCol=document.createElement('div');
+  spkInfoCol.className='step-bottom-col';
+  spkInfoCol.innerHTML='<div class="step-label" style="margin-bottom:4px;">📋 Info SPK</div>'+
+    '<div style="font-size:11px;color:#475569;">'+
+      (spkData.noSpk?'<b>'+spkData.noSpk+'</b><br>':'<span style="color:#CBD5E1">No. SPK belum diisi</span><br>')+
+      (spkData.spk?'Tgl: '+spkData.spk:'<span style="color:#CBD5E1">Tgl SPK belum diisi</span>')+
+    '</div>';
+  bottom.appendChild(spkInfoCol);
+
+  // Nominal
+  var nomCol=document.createElement('div');
+  nomCol.className='step-bottom-col';
+  nomCol.innerHTML='<div class="step-label" style="margin-bottom:4px;">💰 Nominal</div>'+
+    '<div style="display:flex;align-items:center;gap:5px;">'+
+      '<span style="font-size:11px;font-weight:600;color:#64748B;">Rp</span>'+
+      '<input type="number" class="step-input" data-field="nominal" value="'+(entry.nominal||'')+'" placeholder="0" min="0"/>'+
+    '</div>';
+  bottom.appendChild(nomCol);
+
+  // Catatan
+  var noteCol=document.createElement('div');
+  noteCol.className='step-bottom-col';
+  noteCol.innerHTML='<div class="step-label" style="margin-bottom:4px;">📝 Catatan</div>';
+  var ta=document.createElement('textarea');
+  ta.className='step-note';
+  ta.dataset.field='note';
+  ta.placeholder='Keterangan tambahan...';
+  ta.value=entry.note||'';
+  noteCol.appendChild(ta);
+  bottom.appendChild(noteCol);
+
+  body.appendChild(bottom);
+
+  // ── Save ──
+  document.getElementById('stepSaveBtn').onclick=function(){
+    // 1. Save SPK to survei-level (persisted, not per-period)
+    var spkDate=document.getElementById('spkDateInput').value;
+    var spkNo=document.getElementById('spkNoInput').value;
+    if(spkDate||spkNo) saveSpkForSurvei(sid,spkDate,spkNo);
+    // 2. Save period entry
+    var newEntry={};
+    body.querySelectorAll('[data-field]').forEach(function(el){
+      newEntry[el.dataset.field]=el.value;
+    });
+    bayarData[bayarKey(sid,y,m)]=newEntry;
+    saveBayarData();
+    closeM('stepOv');
+    renderBayar();
+    showToast('✅ Data pembayaran disimpan');
+  };
+
+  ov.style.display='flex';
+}
+
+/* --- Add/Edit Survei Modal --- */
+function openAddSurvei(editId){
+  var s=editId?surveiList.find(function(x){return x.id===editId;}):null;
+  document.getElementById('surveiModalTitle').textContent=s?'Edit Survei':'Tambah Survei Baru';
+  document.getElementById('surveiNama').value=s?s.nama:'';
+  document.getElementById('surveiLabel').value=s?s.label:'';
+  document.getElementById('surveiJenis').value=s?s.jenis:'bulanan';
+  document.getElementById('surveiEditId').value=editId||'';
+  document.getElementById('surveiOv').style.display='flex';
+}
+
+function saveSurvei(){
+  var nama=document.getElementById('surveiNama').value.trim();
+  var label=document.getElementById('surveiLabel').value.trim();
+  var jenis=document.getElementById('surveiJenis').value;
+  var editId=document.getElementById('surveiEditId').value;
+  if(!nama){showToast('⚠️ Nama survei wajib diisi');return;}
+  if(editId){
+    var idx=surveiList.findIndex(function(x){return x.id===editId;});
+    if(idx>=0){surveiList[idx].nama=nama;surveiList[idx].label=label;surveiList[idx].jenis=jenis;}
+  } else {
+    var newId=nama.toLowerCase().replace(/[^a-z0-9]/g,'');
+    surveiList.push({id:newId,nama:nama,label:label,jenis:jenis});
+  }
+  saveBayarData();
+  closeM('surveiOv');
+  renderBayar();
+  showToast('✅ Survei berhasil disimpan');
+}
+
+function openKelolaSurvei(){
+  var list=document.getElementById('kelolaList');
+  list.innerHTML='';
+  surveiList.forEach(function(s){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;';
+    row.innerHTML=
+      '<div style="flex:1;"><div style="font-size:12px;font-weight:600;color:#0F172A;">'+s.nama+'</div>'+
+      '<div style="font-size:10px;color:#94A3B8;">'+s.label+' · '+s.jenis+'</div></div>'+
+      '<button data-eid="'+s.id+'" class="kelola-edit-btn" style="padding:4px 10px;border-radius:6px;border:1px solid #E2E8F0;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">✏️ Edit</button>'+
+      '<button data-did="'+s.id+'" class="kelola-del-btn" style="padding:4px 10px;border-radius:6px;border:1px solid #FECACA;background:#FEF2F2;color:#EF4444;font-size:11px;cursor:pointer;font-family:inherit;">🗑</button>';
+    list.appendChild(row);
+  });
+  document.getElementById('kelolaOv').style.display='flex';
+}
+
+function deleteSurvei(id){
+  showCustomConfirm('🗑 Hapus Survei?','Semua data pembayaran survei ini akan ikut terhapus.',function(){
+    surveiList=surveiList.filter(function(s){return s.id!==id;});
+    // Remove bayar data for this survei
+    Object.keys(bayarData).forEach(function(k){if(k.startsWith(id+'_'))delete bayarData[k];});
+    saveBayarData();
+    closeM('kelolaOv');
+    renderBayar();
+    showToast('✅ Survei dihapus');
+  });
+}
+
+
 /* ══ INIT ══ */
 loadFbConfig();   // Sets fbDbUrl (from localStorage or hardcoded default)
+loadBayarData();  // Load payment tracking data
 updateBackupInfo();
 initSidebar();    // Restore sidebar state
 buildFilter(); buildMini(); renderCal(); // Render empty/local first
