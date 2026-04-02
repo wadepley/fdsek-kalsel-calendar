@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>MyCalendar</title>
+<title>📅 CoE FDSEK BI Kalsel</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -2395,20 +2395,6 @@ function fbPull(cb){
     lastFbSync=nowHMS();
     fbSetStatus('ok');
     buildFilter();
-    // Navigate to month/year with most events
-    if(evs.length>0){
-      var _dates=evs.map(function(e){return e.dateStart||'';}).filter(Boolean).sort();
-      if(_dates.length>0){
-        var _counts={};
-        _dates.forEach(function(ds){var k=ds.slice(0,7);_counts[k]=(_counts[k]||0)+1;});
-        var _best=Object.keys(_counts).sort(function(a,b){return _counts[b]-_counts[a];})[0];
-        if(_best){
-          cy=parseInt(_best.slice(0,4));
-          cm=parseInt(_best.slice(5,7))-1;
-          my=cy; mm=cm;
-        }
-      }
-    }
     buildMini();renderCal();refreshMatrix();
     if(cb)cb(true);
   });
