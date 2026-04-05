@@ -2801,6 +2801,7 @@ function loadBayarData(){
 }
 
 function saveBayarData(){
+  // Save to localStorage
   try{
     localStorage.setItem(LS_SURVEI, JSON.stringify(surveiList));
     localStorage.setItem(LS_BAYAR,  JSON.stringify(bayarData));
@@ -2808,7 +2809,10 @@ function saveBayarData(){
   // Push to Firebase
   if(fbEnabled&&fbDbUrl){
     var payload={surveiList:surveiList,bayarData:bayarData,updated:Date.now()};
-    fbReq('/bayardata','PUT',payload,function(){});
+    fbReq('/bayardata','PUT',payload,function(err){
+      if(!err){ lastFbSync=nowHMS(); fbSetStatus('ok'); }
+      else fbSetStatus('err');
+    });
   }
 }
 
@@ -3300,8 +3304,9 @@ fbPull(function(ok){
     // Firebase empty — load localStorage as fallback
     loadData();
     buildFilter(); buildMini(); renderCal();
-    // Push localStorage data to Firebase if any
     if(evs.length>0) fbPush(null);
+    // Also push local bayar data if any
+    if(surveiList.length>0) saveBayarData();
   }
   fbStartAutoSync();
 });
