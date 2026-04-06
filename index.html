@@ -445,7 +445,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .step-modal-title{font-size:14px;font-weight:600;color:#0F172A;}
 .step-modal-sub{font-size:10px;color:#94A3B8;margin-top:1px;}
 /* Pipeline horizontal row */
-.step-pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-bottom:1px solid #F1F5F9;}
+.step-pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid #F1F5F9;}
 .step-col{padding:12px 14px;border-right:1px solid #F1F5F9;display:flex;flex-direction:column;gap:6px;}
 .step-col:last-child{border-right:none;}
 .step-col-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
@@ -648,9 +648,8 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
   <div id="view-bayar" style="display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
     <div class="matrix-wrap">
       <div class="mx-top">
-        <div class="mx-title">💳 Tracking Pembayaran Survei</div>
+        <div class="mx-title">💳 Tracking Pembayaran</div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn-s" style="background:#10B981;font-size:11px;padding:5px 12px;" onclick="openAddSurvei()">＋ Tambah Pembayaran</button>
           <button class="btn-s" style="background:#6366F1;font-size:11px;padding:5px 12px;" onclick="openKelolaSurvei()">⚙️ Kelola</button>
         </div>
       </div>
@@ -708,7 +707,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
     <div class="fg"><label class="fl">Nama/Kode Survei *</label><input class="fi" id="surveiNama" placeholder="contoh: SKDU"/></div>
     <div class="fg"><label class="fl">Keterangan Lengkap</label><input class="fi" id="surveiLabel" placeholder="contoh: Survei Kegiatan Dunia Usaha"/></div>
     <div class="fg"><label class="fl">Jenis Survei *</label>
-      <select class="fi" id="surveiJenis"><option value="bulanan">Bulanan</option><option value="triwulanan">Triwulanan</option></select>
+      <select class="fi" id="surveiJenis"><option value="bulanan">Bulanan</option><option value="triwulanan">Triwulanan</option><option value="eventual">Eventual</option></select>
     </div>
     <div class="mf">
       <button class="btn-c" onclick="closeM('surveiOv')">Batal</button>
@@ -2813,7 +2812,7 @@ function loadBayarData(){
       {id:'sbbt',  nama:'SBBT',   label:'Survei Bank & Non-Bank',         jenis:'triwulanan'},
       {id:'spe',   nama:'SPE',    label:'Survei Pelaksana Survei',        jenis:'triwulanan'},
       {id:'bsekda',nama:'Buku SEKDA', label:'Publikasi Buku SEKDA',       jenis:'bulanan'},
-      {id:'event', nama:'Event',  label:'Kegiatan/Event',                 jenis:'bulanan'},
+      {id:'event', nama:'Event',  label:'Kegiatan/Event',                 jenis:'eventual'},
     ];
     saveBayarData();
   }
@@ -2877,15 +2876,14 @@ function saveSpkForSurvei(sid,spkDate,noSpk){
 function cellStatus(entry, jenis, m, sid){
   // Belum diisi (triwulanan bisa diisi semua bulan) = belum ada tagihan kirim (SPK tidak dihitung sebagai progress)
   if(!entry || !entry.tagihanKirim) return 'kosong';
-  // Sudah lunas
-  if(entry.bayar) return 'lunas';
-  // Overdue check — hanya berlaku setelah tagihan dikirim
+  // Selesai = LDP sudah disampaikan
+  if(entry.ldp) return 'lunas';
+  // Overdue check
   var now=new Date();
   function daysSince(d){ return d?Math.floor((now-new Date(d))/(1000*60*60*24)):0; }
   if(entry.tagihanKirim && !entry.tagihanTerima && daysSince(entry.tagihanKirim)>OVERDUE_DAYS) return 'overdue';
   if(entry.tagihanTerima && !entry.mo2     && daysSince(entry.tagihanTerima)>OVERDUE_DAYS) return 'overdue';
   if(entry.mo2           && !entry.ldp     && daysSince(entry.mo2)>OVERDUE_DAYS) return 'overdue';
-  if(entry.ldp           && !entry.bayar   && daysSince(entry.ldp)>OVERDUE_DAYS) return 'overdue';
   // Dalam proses = tagihan sudah dikirim
   return 'proses';
 }
@@ -2893,13 +2891,13 @@ function cellStatus(entry, jenis, m, sid){
 function cellLabel(entry, status){
   if(status==='na')     return {icon:'',   date:'',   step:''};
   if(status==='kosong') return {icon:'+',  date:'',   step:''};
-  if(status==='lunas')  return {icon:'✅', date:fmtShort(entry.bayar), step:'Terbayar'};
+  if(status==='lunas')  return {icon:'✅', date:fmtShort(entry.ldp), step:'LDP'};
   if(status==='overdue'){
-    var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':''));
+    var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':'LDP');
     return {icon:'⚠️', date:step, step:'Overdue'};
   }
   // proses — tampilkan step yang sedang berjalan
-  var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':(!entry.ldp?'LDP':''));
+  var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':'LDP');
   var date=entry.ldp||entry.mo2||entry.tagihanTerima||entry.tagihanKirim||'';
   return {icon:'⏳', date:fmtShort(date), step:step};
 }
@@ -2922,10 +2920,10 @@ function renderBayar(){
   var jc=document.getElementById('bayarJenisChips');
   if(jc){
     jc.innerHTML='';
-    ['semua','bulanan','triwulanan'].forEach(function(j){
+    ['semua','bulanan','triwulanan','eventual'].forEach(function(j){
       var btn=document.createElement('button');
       btn.className='fb-chip'+(j==='semua'?' all':'')+( j===bayarJenis?' active':'');
-      btn.textContent=j==='semua'?'Semua':j==='bulanan'?'Bulanan':'Triwulanan';
+      btn.textContent=j==='semua'?'Semua':j==='bulanan'?'Bulanan':j==='triwulanan'?'Triwulanan':'Eventual';
       btn.onclick=function(){bayarJenis=j;renderBayar();};
       jc.appendChild(btn);
     });
@@ -2983,8 +2981,8 @@ function renderBayar(){
 
   // Body
   var tbody=document.createElement('tbody');
-  var groups={bulanan:[],triwulanan:[]};
-  shown.forEach(function(s){ groups[s.jenis].push(s); });
+  var groups={bulanan:[],triwulanan:[],eventual:[]};
+  shown.forEach(function(s){ if(groups[s.jenis]) groups[s.jenis].push(s); });
 
   function addGroup(label, list){
     if(!list.length) return;
@@ -3019,8 +3017,9 @@ function renderBayar(){
     });
   }
 
-  addGroup('📊 Survei Bulanan',groups.bulanan);
-  addGroup('📈 Survei Triwulanan',groups.triwulanan);
+  addGroup('📅 Pembayaran Bulanan',groups.bulanan);
+  addGroup('📆 Pembayaran Triwulanan',groups.triwulanan);
+  addGroup('🗓️ Pembayaran Eventual',groups.eventual);
   tbl.appendChild(tbody); // attach tbody to table
 
   bm.innerHTML='';
@@ -3162,10 +3161,7 @@ function openStepModal(sid, y, m){
     {label:'Tanggal', field:'ldp', val:entry.ldp},
   ]));
 
-  // Col 5: Terbayar
-  pipeline.appendChild(mkCol(5,'Terbayar',[
-    {label:'Tanggal', field:'bayar', val:entry.bayar},
-  ]));
+  // Step 5 Terbayar dihapus — LDP = selesai
 
   body.appendChild(pipeline);
 
