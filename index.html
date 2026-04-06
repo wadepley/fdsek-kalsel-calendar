@@ -662,13 +662,23 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
         <span class="fb-label">Jenis:</span>
         <div class="fb-chips" id="bayarJenisChips"></div>
       </div>
-      <div class="sum-grid" id="bayarSumGrid" style="grid-template-columns:repeat(5,1fr);"></div>
+      <!-- Summary 3 cards + Chart -->
+      <div id="bayarSumGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex-shrink:0;"></div>
+      <!-- Bar + Line Chart -->
+      <div style="background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:16px;flex-shrink:0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;color:#0F172A;">📊 Realisasi Pembayaran <span id="bayarChartYear" style="color:#94A3B8;font-weight:400;font-size:11px;"></span></div>
+          <div style="display:flex;gap:14px;">
+            <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:8px;border-radius:2px;background:#3B82F6;"></div>Per Bulan (Rp)</div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:2px;background:#F97316;"></div>YTD Kumulatif</div>
+          </div>
+        </div>
+        <canvas id="bayarChart" height="110"></canvas>
+      </div>
       <div style="display:flex;gap:14px;align-items:center;padding:8px 16px;background:#FAFBFC;border:1px solid #F1F5F9;border-radius:8px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#D1FAE5;"></div>Lunas</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEF9C3;"></div>Proses</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEE2E2;"></div>Overdue</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#F8FAFC;border:1px solid #E2E8F0;"></div>Belum Diisi</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#F1F5F9;"></div>N/A</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#ECFDF5;border:1px solid #6EE7B7;"></div>Lunas</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEFCE8;border:1px solid #FCD34D;"></div>Proses</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;"><div style="width:12px;height:12px;border-radius:3px;background:#FEF2F2;border:1px solid #FCA5A5;"></div>Overdue</div>
         <span style="margin-left:auto;font-size:10px;color:#94A3B8;">💡 Klik sel untuk input detail step pembayaran</span>
       </div>
       <div class="tbl-wrap" style="overflow-x:auto;"><div id="bayarMatrix"></div></div>
@@ -2950,11 +2960,14 @@ function renderBayar(){
 
   var sg=document.getElementById('bayarSumGrid');
   if(sg) sg.innerHTML=
-    '<div class="sum-card"><div class="sum-num" style="color:#6366F1">'+total+'</div><div class="sum-lbl">Total Entri</div></div>'+
     '<div class="sum-card"><div class="sum-num" style="color:#10B981">'+lunas+'</div><div class="sum-lbl">✅ Lunas</div></div>'+
     '<div class="sum-card"><div class="sum-num" style="color:#EAB308">'+proses+'</div><div class="sum-lbl">⏳ Proses</div></div>'+
-    '<div class="sum-card"><div class="sum-num" style="color:#EF4444">'+overdue+'</div><div class="sum-lbl">🔴 Overdue</div></div>'+
-    '<div class="sum-card"><div class="sum-num" style="color:#94A3B8">'+kosong+'</div><div class="sum-lbl">○ Belum Diisi</div></div>';
+    '<div class="sum-card" style="border-color:'+(overdue>0?'#FECACA':'#E2E8F0')+'"><div class="sum-num" style="color:'+(overdue>0?'#EF4444':'#CBD5E1')+'">'+overdue+'</div><div class="sum-lbl" style="color:'+(overdue>0?'#EF4444':'#94A3B8')+'">🔴 Overdue</div></div>';
+  // Update chart year label
+  var cyl=document.getElementById('bayarChartYear');
+  if(cyl) cyl.textContent=bayarYear;
+  // Build chart data
+  renderBayarChart(shown);
 
   // Build matrix
   var bm=document.getElementById('bayarMatrix');
@@ -3313,6 +3326,93 @@ function deleteSurvei(id){
   });
 }
 
+
+
+/* ══ BAYAR CHART ══ */
+var _bayarChartInst = null;
+function renderBayarChart(shown){
+  var canvas=document.getElementById('bayarChart');
+  if(!canvas) return;
+  var ctx=canvas.getContext('2d');
+
+  // Calculate monthly nominal
+  var monthly=Array(12).fill(0);
+  shown.forEach(function(s){
+    for(var m=0;m<12;m++){
+      var entry=getBayarEntry(s.id,bayarYear,m);
+      if(entry&&entry.nominal){
+        var nom=parseFloat((entry.nominal+'').replace(/[^0-9]/g,''))||0;
+        if(nom>0) monthly[m]+=nom;
+      }
+    }
+  });
+
+  // YTD cumulative
+  var ytd=[];
+  var cum=0;
+  monthly.forEach(function(v){cum+=v;ytd.push(cum);});
+
+  var maxVal=Math.max(cum,Math.max.apply(null,monthly))||1;
+  var W=canvas.parentElement.clientWidth-32;
+  var H=110;
+  canvas.width=W; canvas.height=H;
+
+  var padL=10,padR=10,padT=8,padB=24;
+  var chartW=W-padL-padR;
+  var chartH=H-padT-padB;
+  var barW=Math.floor(chartW/12)*0.55;
+  var gap=Math.floor(chartW/12);
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='#F1F5F9'; ctx.lineWidth=1;
+  [0.25,0.5,0.75,1].forEach(function(r){
+    var y=padT+chartH*(1-r);
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+  });
+
+  // Bars
+  monthly.forEach(function(v,i){
+    var x=padL+i*gap+(gap-barW)/2;
+    var bh=v/maxVal*chartH;
+    var y=padT+chartH-bh;
+    // Bar gradient
+    var grad=ctx.createLinearGradient(0,y,0,padT+chartH);
+    grad.addColorStop(0,'#3B82F6');
+    grad.addColorStop(1,'#93C5FD');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.roundRect(x,y,barW,bh,3);
+    ctx.fill();
+  });
+
+  // YTD line
+  ctx.strokeStyle='#F97316'; ctx.lineWidth=2;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ytd.forEach(function(v,i){
+    var x=padL+i*gap+gap/2;
+    var y=padT+chartH-v/maxVal*chartH;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // YTD dots
+  ctx.fillStyle='#F97316';
+  ytd.forEach(function(v,i){
+    if(v===0) return;
+    var x=padL+i*gap+gap/2;
+    var y=padT+chartH-v/maxVal*chartH;
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+  });
+
+  // Month labels
+  ctx.fillStyle='#94A3B8'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  BULAN_SINGKAT.forEach(function(mn,i){
+    ctx.fillText(mn,padL+i*gap+gap/2,H-6);
+  });
+}
 
 /* ══ INIT ══ */
 loadFbConfig();   // Sets fbDbUrl (from localStorage or hardcoded default)
