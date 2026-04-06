@@ -2507,30 +2507,47 @@ function fbPush(cb){
 function fbPull(cb){
   if(!fbEnabled||!fbDbUrl){if(cb)cb(false);return;}
   fbSetStatus('syncing');
-  fbReq('/caldata','GET',undefined,function(err,d){
-    if(err){fbSetStatus('err');if(cb)cb(false);return;}
-    if(!d){fbSetStatus('ok');if(cb)cb(false);return;}
-    // Load evs
-    if(d.evs&&Array.isArray(d.evs)&&d.evs.length>0){
-      evs=d.evs.filter(function(e){return e&&e.id!==undefined;});
-      try{localStorage.setItem(LS_EVS,JSON.stringify(evs));}catch(e){}
-    }
-    // Load cats
-    if(d.cats&&Array.isArray(d.cats)&&d.cats.length>0){
-      CATS.length=0;
-      d.cats.forEach(function(c){CATS.push(c);});
-      try{localStorage.setItem(LS_CATS,JSON.stringify(CATS));}catch(e){}
-    }
-    // Load nid
-    if(d.nid&&parseInt(d.nid,10)>nid){
-      nid=parseInt(d.nid,10);
-      try{localStorage.setItem(LS_NID,String(nid));}catch(e){}
-    }
+  var results={cal:null,bayar:null,calErr:false,bayarDone:false,calDone:false};
+  function afterBoth(){
+    if(!results.calDone||!results.bayarDone) return;
     lastFbSync=nowHMS();
     fbSetStatus('ok');
-    buildFilter();
-    buildMini();renderCal();refreshMatrix();
-    if(cb)cb(true);
+    buildFilter();buildMini();renderCal();refreshMatrix();
+    if(curTab==='bayar') renderBayar();
+    if(cb) cb(!results.calErr);
+  }
+  // Pull caldata
+  fbReq('/caldata','GET',undefined,function(err,d){
+    results.calErr=!!err;
+    if(!err&&d){
+      if(d.evs&&Array.isArray(d.evs)&&d.evs.length>0){
+        evs=d.evs.filter(function(e){return e&&e.id!==undefined;});
+        try{localStorage.setItem(LS_EVS,JSON.stringify(evs));}catch(ex){}
+      }
+      if(d.cats&&Array.isArray(d.cats)&&d.cats.length>0){
+        CATS.length=0; d.cats.forEach(function(c){CATS.push(c);});
+        try{localStorage.setItem(LS_CATS,JSON.stringify(CATS));}catch(ex){}
+      }
+      if(d.nid&&parseInt(d.nid,10)>nid){
+        nid=parseInt(d.nid,10);
+        try{localStorage.setItem(LS_NID,String(nid));}catch(ex){}
+      }
+    } else if(err){ fbSetStatus('err'); }
+    results.calDone=true; afterBoth();
+  });
+  // Pull bayardata paralel
+  fbReq('/bayardata','GET',undefined,function(err,d){
+    if(!err&&d){
+      if(d.surveiList&&Array.isArray(d.surveiList)&&d.surveiList.length){
+        surveiList=d.surveiList;
+        try{localStorage.setItem(LS_SURVEI,JSON.stringify(surveiList));}catch(ex){}
+      }
+      if(d.bayarData&&typeof d.bayarData==='object'){
+        bayarData=d.bayarData;
+        try{localStorage.setItem(LS_BAYAR,JSON.stringify(bayarData));}catch(ex){}
+      }
+    }
+    results.bayarDone=true; afterBoth();
   });
 }
 
@@ -2790,11 +2807,13 @@ function loadBayarData(){
   }catch(e){}
   if(!surveiList.length){
     surveiList=[
-      {id:'skdu',  nama:'SKDU',  label:'Survei Kegiatan Dunia Usaha',    jenis:'bulanan'},
-      {id:'sppr',  nama:'SPPR',  label:'Survei Penjualan Properti',       jenis:'bulanan'},
-      {id:'skpwdn',nama:'SKPwDN',label:'Survei Konsumen',                 jenis:'bulanan'},
-      {id:'sbbt',  nama:'SBBT',  label:'Survei Bank & Non-Bank',          jenis:'triwulanan'},
-      {id:'spe',   nama:'SPE',   label:'Survei Pelaksana Survei',         jenis:'triwulanan'},
+      {id:'skdu',  nama:'SKDU',   label:'Survei Kegiatan Dunia Usaha',    jenis:'bulanan'},
+      {id:'sppr',  nama:'SPPR',   label:'Survei Penjualan Properti',      jenis:'bulanan'},
+      {id:'skpwdn',nama:'SKPwDN', label:'Survei Konsumen',                jenis:'bulanan'},
+      {id:'sbbt',  nama:'SBBT',   label:'Survei Bank & Non-Bank',         jenis:'triwulanan'},
+      {id:'spe',   nama:'SPE',    label:'Survei Pelaksana Survei',        jenis:'triwulanan'},
+      {id:'bsekda',nama:'Buku SEKDA', label:'Publikasi Buku SEKDA',       jenis:'bulanan'},
+      {id:'event', nama:'Event',  label:'Kegiatan/Event',                 jenis:'bulanan'},
     ];
     saveBayarData();
   }
@@ -2835,6 +2854,17 @@ function loadBayarFromFb(cb){
 function bayarKey(id,y,m){ return id+'_'+y+'_'+m; }
 function getBayarEntry(id,y,m){ return bayarData[bayarKey(id,y,m)]||{}; }
 
+function fmtNominal(el){
+  var raw=el.value.replace(/[^0-9]/g,'');
+  el.value=raw?Number(raw).toLocaleString('id-ID'):'';
+  el.dataset.rawValue=raw;
+}
+function getNominalRaw(el){
+  // Get raw number from formatted input
+  if(!el) return '';
+  return el.dataset.rawValue||el.value.replace(/[^0-9]/g,'')||'';
+}
+
 function getSpkForSurvei(sid){
   var s=surveiList.find(function(x){return x.id===sid;});
   return s?{spk:s.spkDate||'',noSpk:s.noSpk||''}:{spk:'',noSpk:''};
@@ -2845,8 +2875,7 @@ function saveSpkForSurvei(sid,spkDate,noSpk){
 }
 
 function cellStatus(entry, jenis, m, sid){
-  if(jenis==='triwulanan' && TW_BULAN.indexOf(m)<0) return 'na';
-  // Belum diisi = belum ada tagihan kirim (SPK tidak dihitung sebagai progress)
+  // Belum diisi (triwulanan bisa diisi semua bulan) = belum ada tagihan kirim (SPK tidak dihitung sebagai progress)
   if(!entry || !entry.tagihanKirim) return 'kosong';
   // Sudah lunas
   if(entry.bayar) return 'lunas';
@@ -2911,7 +2940,6 @@ function renderBayar(){
   var total=0,lunas=0,proses=0,overdue=0,kosong=0;
   shown.forEach(function(s){
     for(var m=0;m<12;m++){
-      if(s.jenis==='triwulanan'&&TW_BULAN.indexOf(m)<0) continue;
       total++;
       var entry=getBayarEntry(s.id,bayarYear,m);
       var st=cellStatus(entry,s.jenis,m,s.id);
@@ -2973,24 +3001,18 @@ function renderBayar(){
       // Month cells
       for(var m=0;m<12;m++){
         var td=document.createElement('td');
-        if(s.jenis==='triwulanan'&&TW_BULAN.indexOf(m)<0){
-          td.innerHTML='<div class="pay-cell na"><div class="pc-icon">N/A</div></div>';
-        } else {
-          var entry=getBayarEntry(s.id,bayarYear,m);
-          var st=cellStatus(entry,s.jenis,m,s.id);
-          var lbl=cellLabel(entry,st);
-          var cell=document.createElement('div');
-          cell.className='pay-cell '+st;
-          cell.innerHTML=(lbl.icon?'<div class="pc-icon">'+lbl.icon+'</div>':'')+
-            (lbl.date?'<div class="pc-date">'+lbl.date+'</div>':'')+
-            (lbl.step?'<div class="pc-step">'+lbl.step+'</div>':'');
-          if(st!=='na'){
-            (function(sid,sy,sm){
-              cell.onclick=function(){openStepModal(sid,sy,sm);};
-            })(s.id,bayarYear,m);
-          }
-          td.appendChild(cell);
-        }
+        var entry=getBayarEntry(s.id,bayarYear,m);
+        var st=cellStatus(entry,s.jenis,m,s.id);
+        var lbl=cellLabel(entry,st);
+        var cell=document.createElement('div');
+        cell.className='pay-cell '+st;
+        cell.innerHTML=(lbl.icon?'<div class="pc-icon">'+lbl.icon+'</div>':'')+
+          (lbl.date?'<div class="pc-date">'+lbl.date+'</div>':'')+
+          (lbl.step?'<div class="pc-step">'+lbl.step+'</div>':'');
+        (function(sid,sy,sm){
+          cell.onclick=function(){openStepModal(sid,sy,sm);};
+        })(s.id,bayarYear,m);
+        td.appendChild(cell);
         row.appendChild(td);
       }
       tbody.appendChild(row);
@@ -3010,7 +3032,7 @@ function openStepModal(sid, y, m){
   var s=surveiList.find(function(x){return x.id===sid;});
   if(!s) return;
   var entry=getBayarEntry(sid,y,m);
-  var periodLabel=(s.jenis==='triwulanan'?'Tw '+(TW_BULAN.indexOf(m)+1)+' ':BULAN_SINGKAT[m]+' ')+y;
+  var periodLabel=BULAN_SINGKAT[m]+' '+y;
 
   var ov=document.getElementById('stepOv');
   if(!ov) return;
@@ -3167,7 +3189,7 @@ function openStepModal(sid, y, m){
   nomCol.innerHTML='<div class="step-label" style="margin-bottom:4px;">💰 Nominal</div>'+
     '<div style="display:flex;align-items:center;gap:5px;">'+
       '<span style="font-size:11px;font-weight:600;color:#64748B;">Rp</span>'+
-      '<input type="number" class="step-input" data-field="nominal" value="'+(entry.nominal||'')+'" placeholder="0" min="0"/>'+
+      '<input type="text" class="step-input" id="nominalInput" data-field="nominal" value="'+(entry.nominal?Number(entry.nominal).toLocaleString('id-ID'):'')+'" placeholder="0" inputmode="numeric" oninput="fmtNominal(this)"/>'+
     '</div>';
   bottom.appendChild(nomCol);
 
@@ -3194,7 +3216,11 @@ function openStepModal(sid, y, m){
     // 2. Save period entry
     var newEntry={};
     body.querySelectorAll('[data-field]').forEach(function(el){
-      newEntry[el.dataset.field]=el.value;
+      if(el.dataset.field==='nominal'){
+        newEntry.nominal=getNominalRaw(el); // store raw number
+      } else {
+        newEntry[el.dataset.field]=el.value;
+      }
     });
     bayarData[bayarKey(sid,y,m)]=newEntry;
     saveBayarData();
