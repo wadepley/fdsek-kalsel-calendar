@@ -45,20 +45,6 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .logo-name{font-size:12px;font-weight:600;color:#0F172A;letter-spacing:-0.2px;line-height:1.3;}
 .add-btn{width:100%;padding:9px 14px;background:#3B82F6;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:6px;}
 .add-btn:hover{background:#2563EB;}
-.mc-wrap{padding:12px 14px 10px;}
-.mc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
-.mc-title{font-size:12px;font-weight:600;color:#334155;}
-.mc-nav{background:none;border:none;cursor:pointer;color:#94A3B8;width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;}
-.mc-nav:hover{background:#F1F5F9;color:#334155;}
-.mc-dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:3px;}
-.mc-dow span{font-size:9px;font-weight:600;color:#94A3B8;text-transform:uppercase;}
-.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;}
-.md{font-size:10px;color:#64748B;aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;position:relative;}
-.md:hover{background:#EFF6FF;}
-.md.om{color:#CBD5E1;}
-.md.td{background:#3B82F6;color:#fff;font-weight:600;}
-.md.he::after{content:'';position:absolute;bottom:2px;width:3px;height:3px;border-radius:50%;background:#3B82F6;}
-.md.td.he::after{background:rgba(255,255,255,.8);}
 .stats-box{margin:0 14px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:11px;}
 .stats-head{font-size:10px;font-weight:600;color:#1D4ED8;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;}
@@ -511,17 +497,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
     <div class="fb-icon noconfig" id="fbDot">🔥</div>
     <span id="fbLabel">Firebase belum dikonfigurasi</span>
   </div>
-  <div class="mc-wrap sb-hide">
-    <div class="mc-head">
-      <span class="mc-title" id="mcLabel"></span>
-      <div style="display:flex;gap:2px;">
-        <button class="mc-nav" onclick="miniNav(-1)">‹</button>
-        <button class="mc-nav" onclick="miniNav(1)">›</button>
-      </div>
-    </div>
-    <div class="mc-dow"><span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span></div>
-    <div class="mc-grid" id="mcGrid"></div>
-  </div>
+
   <!-- AGENDA HARI INI -->
   <div class="sb-agenda sb-hide" id="sbAgendaWrap">
     <div class="sb-agenda-title">📋 Agenda Hari Ini</div>
@@ -662,6 +638,10 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
         <input class="pf-search" id="personSearch" placeholder="Cari nama..." oninput="renderOrang()"/>
         <div class="pf-chips" id="personChips"></div>
         <span class="pf-clear" onclick="clearPersonFilter()" style="align-self:center;flex-shrink:0;">Reset</span>
+      </div>
+      <div class="filter-bar" style="gap:6px;">
+        <span class="fb-label">🏷️ Status:</span>
+        <div class="fb-chips" id="orangStatusChips"></div>
       </div>
       <div id="orangContent"></div>
     </div>
@@ -1007,7 +987,7 @@ var sc=0,eid=null,nid=20,sq='';
 var activeFilters=new Set();
 var curTab='cal';
 var ktab='all',mfYear=today.getFullYear(),mfMonth=-1;
-var otab='card',ofYear=today.getFullYear(),ofMonth=-1;
+var otab='card',ofYear=today.getFullYear(),ofMonth=-1,ofStatus='all';
 var selectedPersons=new Set();
 var tempPIC=null,tempAng=[];
 
@@ -1485,13 +1465,36 @@ function buildKMatrix(){
 /* ══ MATRIKS PER ORANG ══ */
 function renderOrang(){
   buildMonthFilter('ofY','ofChips',ofYear,ofMonth,function(m){ofMonth=m;renderOrang();});
+  // Build status filter chips
+  var sc=document.getElementById('orangStatusChips');
+  if(sc){
+    sc.innerHTML='';
+    var statuses=[
+      {val:'all',   label:'Semua'},
+      {val:'up',    label:'🔵 Upcoming'},
+      {val:'today', label:'🟡 In Progress'},
+      {val:'done',  label:'✅ Done'},
+      {val:'overdue',label:'🔴 Overdue'},
+    ];
+    statuses.forEach(function(s){
+      var btn=document.createElement('button');
+      btn.className='fb-chip'+(s.val==='all'?' all':'')+(s.val===ofStatus?' active':'');
+      btn.textContent=s.label;
+      (function(sv){btn.onclick=function(){ofStatus=sv;renderOrang();};})(s.val);
+      sc.appendChild(btn);
+    });
+  }
   var ts=tds();
   var searchQ=(document.getElementById('personSearch').value||'').toLowerCase();
   var base=getEvs().filter(function(e){
     var s=e.dateStart||'',en=e.dateEnd||s;
-    if(ofMonth===-1){return s.startsWith(String(ofYear))||en.startsWith(String(ofYear));}
-    var pfx=ofYear+'-'+('0'+(ofMonth+1)).slice(-2);
-    return s.startsWith(pfx)||en.startsWith(pfx)||(s<pfx&&en>pfx+'-31');
+    if(ofMonth===-1){if(!s.startsWith(String(ofYear))&&!en.startsWith(String(ofYear))) return false;}
+    else {
+      var pfx=ofYear+'-'+('0'+(ofMonth+1)).slice(-2);
+      if(!s.startsWith(pfx)&&!en.startsWith(pfx)&&!(s<pfx&&en>pfx+'-31')) return false;
+    }
+    if(ofStatus!=='all' && getStatus(e)!==ofStatus) return false;
+    return true;
   });
   var persons=getAllPersons().filter(function(p){return !searchQ||p.name.toLowerCase().indexOf(searchQ)>=0;});
 
