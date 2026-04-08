@@ -139,6 +139,24 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .dp-ev-title{font-size:12px;font-weight:600;color:#0F172A;}
 .dp-ev-meta{font-size:10px;color:#94A3B8;margin-top:2px;}
 .dp-ev-cat{font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;display:inline-flex;margin-top:3px;}
+.dp-ev-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;}
+.dp-pic-avs{display:flex;gap:-4px;}
+.dp-pic-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;border:1.5px solid #fff;margin-left:-4px;flex-shrink:0;}
+.dp-pic-av:first-child{margin-left:0;}
+/* Sidebar agenda */
+.sb-agenda{padding:10px 14px 14px;border-top:1px solid #F1F5F9;}
+.sb-agenda-title{font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.sb-agenda-empty{font-size:11px;color:#CBD5E1;text-align:center;padding:8px 0;}
+.sb-agenda-item{display:flex;align-items:flex-start;gap:7px;padding:6px 0;border-bottom:1px solid #F8FAFC;cursor:pointer;}
+.sb-agenda-item:last-child{border-bottom:none;}
+.sb-agenda-item:hover .sb-agenda-title-text{color:#3B82F6;}
+.sb-agenda-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.sb-agenda-info{flex:1;min-width:0;}
+.sb-agenda-title-text{font-size:11px;font-weight:600;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
+.sb-agenda-meta{font-size:9px;color:#94A3B8;margin-top:1px;}
+.sb-agenda-pics{display:flex;margin-top:3px;}
+.sb-agenda-av{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:#fff;border:1px solid #fff;margin-left:-3px;flex-shrink:0;}
+.sb-agenda-av:first-child{margin-left:0;}
 .dp-empty{font-size:12px;color:#94A3B8;text-align:center;padding:20px 0;}
 
 /* ── MATRIX ── */
@@ -503,6 +521,11 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
     </div>
     <div class="mc-dow"><span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span></div>
     <div class="mc-grid" id="mcGrid"></div>
+  </div>
+  <!-- AGENDA HARI INI -->
+  <div class="sb-agenda sb-hide" id="sbAgendaWrap">
+    <div class="sb-agenda-title">📋 Agenda Hari Ini</div>
+    <div id="sbAgendaList"><div class="sb-agenda-empty">Tidak ada kegiatan hari ini</div></div>
   </div>
   <div class="stats-box sb-hide">
     <div class="stats-head">Bulan Ini</div>
@@ -1281,6 +1304,7 @@ function renderCal(){
     g.appendChild(cell);
   }
   buildStats();
+  buildSidebarAgenda();
 }
 
 /* ══ DAY POPUP — all events on a date ══ */
@@ -1321,12 +1345,23 @@ function showDayPopup(dstr,filtered){
       var time=ev.time?(ev.time+(ev.timeEnd?' – '+ev.timeEnd:''))+' ':'' ;
       var item=document.createElement('div');
       item.className='dp-ev-item';
+      // Build PIC avatars
+      var pics=[];
+      if(ev.pic&&ev.pic.name) pics.push(ev.pic);
+      (ev.ang||[]).forEach(function(a){if(a&&a.name) pics.push(a);});
+      var picHtml=pics.slice(0,4).map(function(p){
+        var col=avColor(p.name);
+        return '<div class="dp-pic-av" style="background:'+col+'" title="'+p.name+'">'+initials(p.name)+'</div>';
+      }).join('');
       item.innerHTML=
         '<div class="dp-ev-dot" style="background:'+cat.color+'"></div>'+
         '<div class="dp-ev-info">'+
           '<div class="dp-ev-title">'+ev.title+'</div>'+
           '<div class="dp-ev-meta">'+time+dateLabel+dur+'</div>'+
-          '<span class="dp-ev-cat" style="background:'+cat.color+'18;color:'+cat.color+';">'+cat.name+'</span>'+
+          '<div class="dp-ev-footer">'+
+            '<span class="dp-ev-cat" style="background:'+cat.color+'18;color:'+cat.color+';">'+cat.name+'</span>'+
+            (picHtml?'<div class="dp-pic-avs">'+picHtml+'</div>':'')+
+          '</div>'+
         '</div>';
       // Click: close day popup, show detail
       (function(evObj){
@@ -3312,6 +3347,45 @@ function deleteSurvei(id){
 }
 
 
+
+
+/* ══ SIDEBAR AGENDA HARI INI ══ */
+function buildSidebarAgenda(){
+  var listEl=document.getElementById('sbAgendaList');
+  if(!listEl) return;
+  var ts=tds();
+  var todayEvs=getEvs().filter(function(ev){
+    if(!ev||!ev.dateStart) return false;
+    var s=ev.dateStart,en=ev.dateEnd||s;
+    return ts>=s&&ts<=en;
+  }).sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
+
+  listEl.innerHTML='';
+  if(!todayEvs.length){
+    listEl.innerHTML='<div class="sb-agenda-empty">Tidak ada kegiatan hari ini</div>';
+    return;
+  }
+  todayEvs.forEach(function(ev){
+    var cat=(ev.cat!==undefined?CATS[ev.cat]:null)||CATS[CATS.length-1]||{name:'?',color:'#94A3B8'};
+    var pics=[];
+    if(ev.pic&&ev.pic.name) pics.push(ev.pic);
+    (ev.ang||[]).forEach(function(a){if(a&&a.name) pics.push(a);});
+    var picHtml=pics.slice(0,3).map(function(p){
+      return '<div class="sb-agenda-av" style="background:'+avColor(p.name)+'" title="'+p.name+'">'+initials(p.name)+'</div>';
+    }).join('');
+    var item=document.createElement('div');
+    item.className='sb-agenda-item';
+    item.innerHTML=
+      '<div class="sb-agenda-dot" style="background:'+cat.color+'"></div>'+
+      '<div class="sb-agenda-info">'+
+        '<div class="sb-agenda-title-text">'+ev.title+'</div>'+
+        '<div class="sb-agenda-meta">'+(ev.time?ev.time+(ev.timeEnd?' – '+ev.timeEnd:''):cat.name)+'</div>'+
+        (picHtml?'<div class="sb-agenda-pics">'+picHtml+'</div>':'')+
+      '</div>';
+    (function(evObj){item.onclick=function(){showDet(evObj);};})(ev);
+    listEl.appendChild(item);
+  });
+}
 
 /* ══ INIT ══ */
 loadFbConfig();   // Sets fbDbUrl (from localStorage or hardcoded default)
