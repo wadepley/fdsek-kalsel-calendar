@@ -1126,31 +1126,9 @@ function buildStats(){
   a.appendChild(tot);
 }
 
-/* ══ MINI CAL ══ */
-function buildMini(){
-  document.getElementById('mcLabel').textContent=MN[mm].slice(0,3)+' '+my;
-  var g=document.getElementById('mcGrid');g.innerHTML='';
-  var f=new Date(my,mm,1).getDay(),dim=new Date(my,mm+1,0).getDate();
-  var ts=tds();
-  var evDates=new Set();
-  evs.forEach(function(ev){
-    var s=ev.dateStart||'',en=ev.dateEnd||s;
-    var cur=s;
-    while(cur<=en){evDates.add(cur);cur=addDays(cur,1);}
-  });
-  for(var i=0;i<f;i++){var el=document.createElement('div');el.className='md om';g.appendChild(el);}
-  for(var d=1;d<=dim;d++){
-    var el=document.createElement('div');el.className='md';
-    var dstr=ds(my,mm,d);
-    if(dstr===ts)el.classList.add('td');
-    if(evDates.has(dstr))el.classList.add('he');
-    el.textContent=d;
-    (function(y2,m2){el.onclick=function(){cy=y2;cm=m2;renderCal();};})(my,mm);
-    g.appendChild(el);
-  }
-}
+/* ══ MINI CAL (removed, kept as stub) ══ */
+function buildMini(){/* mini calendar removed */}
 
-/* ══ CALENDAR RENDER with seamless multi-day bars ══ */
 function renderCal(){
   document.getElementById('tbTitle').textContent=MN[cm]+' '+cy;
   var g=document.getElementById('calGrid');g.innerHTML='';
@@ -1674,7 +1652,7 @@ function switchOtab(t){
 function refreshMatrix(){if(curTab==='kegiatan')buildKMatrix();if(curTab==='orang')renderOrang();}
 
 /* ══ NAV ══ */
-function miniNav(d){mm+=d;if(mm>11){mm=0;my++;}if(mm<0){mm=11;my--;}buildMini();}
+function miniNav(d){/* mini calendar removed */}
 function navMonth(d){cm+=d;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}mm=cm;my=cy;buildMini();renderCal();}
 function goToday(){cy=today.getFullYear();cm=today.getMonth();my=cy;mm=cm;buildMini();renderCal();}
 function doSearch(v){sq=v;renderCal();refreshMatrix();}
