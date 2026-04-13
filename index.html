@@ -130,18 +130,22 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .dp-pic-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;border:1.5px solid #fff;margin-left:-4px;flex-shrink:0;}
 .dp-pic-av:first-child{margin-left:0;}
 /* Sidebar agenda */
-.sb-agenda{padding:10px 14px 14px;border-top:1px solid #F1F5F9;}
-.sb-agenda-title{font-size:10px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.sb-agenda{padding:10px 12px 12px;border-top:1px solid #F1F5F9;}
+.sb-agenda-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sb-agenda-title{font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.5px;}
+.sb-agenda-count{font-size:10px;font-weight:600;background:#EFF6FF;color:#3B82F6;padding:1px 6px;border-radius:8px;}
 .sb-agenda-empty{font-size:11px;color:#CBD5E1;text-align:center;padding:8px 0;}
-.sb-agenda-item{display:flex;align-items:flex-start;gap:7px;padding:6px 0;border-bottom:1px solid #F8FAFC;cursor:pointer;}
+.sb-agenda-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F8FAFC;cursor:pointer;}
 .sb-agenda-item:last-child{border-bottom:none;}
 .sb-agenda-item:hover .sb-agenda-title-text{color:#3B82F6;}
-.sb-agenda-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.sb-agenda-left{width:3px;height:32px;border-radius:2px;flex-shrink:0;}
 .sb-agenda-info{flex:1;min-width:0;}
 .sb-agenda-title-text{font-size:11px;font-weight:600;color:#0F172A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;}
-.sb-agenda-meta{font-size:9px;color:#94A3B8;margin-top:1px;}
-.sb-agenda-pics{display:flex;margin-top:3px;}
-.sb-agenda-av{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:#fff;border:1px solid #fff;margin-left:-3px;flex-shrink:0;}
+.sb-agenda-row2{display:flex;align-items:center;gap:5px;margin-top:1px;}
+.sb-agenda-time{font-size:9px;font-weight:600;color:#3B82F6;white-space:nowrap;}
+.sb-agenda-cat{font-size:9px;color:#94A3B8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sb-agenda-pics{display:flex;align-items:center;flex-shrink:0;}
+.sb-agenda-av{width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:700;color:#fff;border:1.5px solid #fff;margin-left:-3px;flex-shrink:0;}
 .sb-agenda-av:first-child{margin-left:0;}
 .dp-empty{font-size:12px;color:#94A3B8;text-align:center;padding:20px 0;}
 
@@ -500,7 +504,10 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 
   <!-- AGENDA HARI INI -->
   <div class="sb-agenda sb-hide" id="sbAgendaWrap">
-    <div class="sb-agenda-title">📋 Agenda Hari Ini</div>
+    <div class="sb-agenda-header">
+      <span class="sb-agenda-title">📋 Agenda Hari Ini</span>
+      <span class="sb-agenda-count" id="sbAgendaCount" style="display:none;"></span>
+    </div>
     <div id="sbAgendaList"><div class="sb-agenda-empty">Tidak ada kegiatan hari ini</div></div>
   </div>
   <div class="stats-box sb-hide">
@@ -2909,13 +2916,23 @@ function cellLabel(entry, status){
   if(status==='kosong') return {icon:'+',  date:'',   step:''};
   if(status==='lunas')  return {icon:'✅', date:fmtShort(entry.ldp), step:'LDP'};
   if(status==='overdue'){
+    // Step yang overdue = step berikutnya yang belum diisi
     var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':'LDP');
-    return {icon:'⚠️', date:step, step:'Overdue'};
+    var lastDate=entry.mo2||entry.tagihanTerima||entry.tagihanKirim||'';
+    return {icon:'⚠️', date:fmtShort(lastDate), step:step+' OD'};
   }
-  // proses — tampilkan step yang sedang berjalan
-  var step=!entry.tagihanTerima?'Tagihan':(!entry.mo2?'M02':'LDP');
-  var date=entry.ldp||entry.mo2||entry.tagihanTerima||entry.tagihanKirim||'';
-  return {icon:'⏳', date:fmtShort(date), step:step};
+  // proses — tampilkan step TERAKHIR yang sudah diisi
+  var lastStep, lastDate;
+  if(entry.mo2){
+    lastStep='M02'; lastDate=entry.mo2;
+  } else if(entry.tagihanTerima){
+    lastStep='Terima'; lastDate=entry.tagihanTerima;
+  } else if(entry.tagihanKirim){
+    lastStep='Tagihan'; lastDate=entry.tagihanKirim;
+  } else {
+    lastStep='SPK'; lastDate='';
+  }
+  return {icon:'⏳', date:fmtShort(lastDate), step:lastStep};
 }
 
 function fmtShort(dateStr){
@@ -3341,28 +3358,80 @@ function buildSidebarAgenda(){
     return ts>=s&&ts<=en;
   }).sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
 
+  // Update count badge
+  var countEl=document.getElementById('sbAgendaCount');
+  if(countEl){
+    if(todayEvs.length>0){
+      countEl.textContent=todayEvs.length;
+      countEl.style.display='inline';
+    } else {
+      countEl.style.display='none';
+    }
+  }
+
   listEl.innerHTML='';
   if(!todayEvs.length){
-    listEl.innerHTML='<div class="sb-agenda-empty">Tidak ada kegiatan hari ini</div>';
+    listEl.innerHTML='<div class="sb-agenda-empty">✨ Tidak ada kegiatan hari ini</div>';
     return;
   }
+
   todayEvs.forEach(function(ev){
     var cat=(ev.cat!==undefined?CATS[ev.cat]:null)||CATS[CATS.length-1]||{name:'?',color:'#94A3B8'};
     var pics=[];
     if(ev.pic&&ev.pic.name) pics.push(ev.pic);
     (ev.ang||[]).forEach(function(a){if(a&&a.name) pics.push(a);});
-    var picHtml=pics.slice(0,3).map(function(p){
-      return '<div class="sb-agenda-av" style="background:'+avColor(p.name)+'" title="'+p.name+'">'+initials(p.name)+'</div>';
-    }).join('');
+
     var item=document.createElement('div');
     item.className='sb-agenda-item';
-    item.innerHTML=
-      '<div class="sb-agenda-dot" style="background:'+cat.color+'"></div>'+
-      '<div class="sb-agenda-info">'+
-        '<div class="sb-agenda-title-text">'+ev.title+'</div>'+
-        '<div class="sb-agenda-meta">'+(ev.time?ev.time+(ev.timeEnd?' – '+ev.timeEnd:''):cat.name)+'</div>'+
-        (picHtml?'<div class="sb-agenda-pics">'+picHtml+'</div>':'')+
-      '</div>';
+
+    // Colored left bar
+    var bar=document.createElement('div');
+    bar.className='sb-agenda-left';
+    bar.style.background=cat.color;
+    item.appendChild(bar);
+
+    // Info
+    var info=document.createElement('div');
+    info.className='sb-agenda-info';
+    var titleEl=document.createElement('div');
+    titleEl.className='sb-agenda-title-text';
+    titleEl.textContent=ev.title;
+    info.appendChild(titleEl);
+
+    var row2=document.createElement('div');
+    row2.className='sb-agenda-row2';
+    if(ev.time){
+      var timeEl=document.createElement('span');
+      timeEl.className='sb-agenda-time';
+      timeEl.textContent=ev.time+(ev.timeEnd?' – '+ev.timeEnd:'');
+      row2.appendChild(timeEl);
+      var sep=document.createElement('span');
+      sep.style.cssText='color:#E2E8F0;font-size:9px;';
+      sep.textContent='·';
+      row2.appendChild(sep);
+    }
+    var catEl=document.createElement('span');
+    catEl.className='sb-agenda-cat';
+    catEl.textContent=cat.name;
+    row2.appendChild(catEl);
+    info.appendChild(row2);
+    item.appendChild(info);
+
+    // PIC avatars
+    if(pics.length){
+      var picsDiv=document.createElement('div');
+      picsDiv.className='sb-agenda-pics';
+      pics.slice(0,3).forEach(function(p){
+        var av=document.createElement('div');
+        av.className='sb-agenda-av';
+        av.style.background=avColor(p.name);
+        av.title=p.name;
+        av.textContent=initials(p.name);
+        picsDiv.appendChild(av);
+      });
+      item.appendChild(picsDiv);
+    }
+
     (function(evObj){item.onclick=function(){showDet(evObj);};})(ev);
     listEl.appendChild(item);
   });
