@@ -81,6 +81,21 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .f-badge{background:#EFF6FF;color:#1D4ED8;border:1px solid #BFDBFE;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
 .tb-search{padding:6px 11px;border:1px solid #E2E8F0;border-radius:8px;font-size:12px;color:#334155;background:#F8FAFC;font-family:inherit;width:160px;}
 .tb-search:focus{outline:none;border-color:#3B82F6;background:#fff;}
+/* Person filter in topbar */
+.tb-person-wrap{position:relative;display:inline-flex;align-items:center;}
+.tb-person-btn{padding:6px 11px;border:1px solid #E2E8F0;border-radius:8px;font-size:12px;color:#334155;background:#F8FAFC;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.tb-person-btn:hover,.tb-person-btn.active{border-color:#3B82F6;background:#EFF6FF;color:#1D4ED8;}
+.tb-person-btn .tb-av{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;flex-shrink:0;}
+.person-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #E2E8F0;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);width:220px;max-height:280px;overflow-y:auto;z-index:100;padding:6px;}
+.person-dropdown.hidden{display:none;}
+.pd-search{width:100%;padding:6px 9px;border:1px solid #E2E8F0;border-radius:7px;font-size:11px;font-family:inherit;margin-bottom:5px;box-sizing:border-box;}
+.pd-search:focus{outline:none;border-color:#3B82F6;}
+.pd-item{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:7px;cursor:pointer;font-size:12px;color:#334155;}
+.pd-item:hover{background:#F8FAFC;}
+.pd-item.selected{background:#EFF6FF;color:#1D4ED8;font-weight:500;}
+.pd-item .pd-av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;}
+.pd-clear{width:100%;padding:5px;font-size:11px;color:#94A3B8;background:none;border:none;cursor:pointer;font-family:inherit;text-align:center;border-top:1px solid #F1F5F9;margin-top:4px;}
+.pd-clear:hover{color:#EF4444;}
 
 /* ── CALENDAR GRID ── */
 .cal-area{flex:1;overflow:auto;display:flex;flex-direction:column;}
@@ -471,6 +486,7 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
 .step-note:focus{outline:none;border-color:#3B82F6;background:#fff;}
 .step-hint{font-size:9px;color:#94A3B8;margin-top:2px;line-height:1.4;}
 </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -506,7 +522,10 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
   <div class="sb-agenda sb-hide" id="sbAgendaWrap">
     <div class="sb-agenda-header">
       <span class="sb-agenda-title">📋 Agenda Hari Ini</span>
-      <span class="sb-agenda-count" id="sbAgendaCount" style="display:none;"></span>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span class="sb-agenda-count" id="sbAgendaCount" style="display:none;"></span>
+        <button id="agendaScreenshotBtn" onclick="screenshotAgenda()" title="Screenshot ke clipboard" style="background:none;border:1px solid #E2E8F0;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:11px;color:#64748B;display:none;">📸</button>
+      </div>
     </div>
     <div id="sbAgendaList"><div class="sb-agenda-empty">Tidak ada kegiatan hari ini</div></div>
   </div>
@@ -560,6 +579,17 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
       <button class="tb-nav" onclick="navMonth(1)">›</button>
     </div>
     <div class="topbar-right">
+      <!-- Person filter -->
+      <div class="tb-person-wrap" id="tbPersonWrap">
+        <button class="tb-person-btn" id="tbPersonBtn" onclick="togglePersonDropdown()">
+          <span id="tbPersonLabel">👤 Semua Orang</span>
+        </button>
+        <div class="person-dropdown hidden" id="personDropdown">
+          <input class="pd-search" id="pdSearch" placeholder="Cari nama..." oninput="filterPersonDropdown()"/>
+          <div id="pdList"></div>
+          <button class="pd-clear" onclick="clearCalPersonFilter()">✕ Reset filter orang</button>
+        </div>
+      </div>
       <input class="tb-search" placeholder="🔍 Cari kegiatan..." oninput="doSearch(this.value)"/>
     </div>
   </div>
@@ -992,6 +1022,7 @@ var today=new Date();
 var cy=today.getFullYear(),cm=today.getMonth(),my=cy,mm=cm;
 var sc=0,eid=null,nid=20,sq='';
 var activeFilters=new Set();
+var calPersonFilter=new Set(); // filter orang di kalender utama
 var curTab='cal';
 var ktab='all',mfYear=today.getFullYear(),mfMonth=-1;
 var otab='card',ofYear=today.getFullYear(),ofMonth=-1,ofStatus='all';
@@ -1067,8 +1098,9 @@ var evs=[]
 function getAllPersons(){
   var map={};
   evs.forEach(function(ev){
-    if(ev.pic){var k=ev.pic.name;if(!map[k])map[k]={name:ev.pic.name,unit:ev.pic.unit};}
-    (ev.ang||[]).forEach(function(a){var k=a.name;if(!map[k])map[k]={name:a.name,unit:a.unit};});
+    if(ev.pimp&&ev.pimp.name){var k=ev.pimp.name;if(!map[k])map[k]={name:ev.pimp.name,unit:ev.pimp.unit||''};}
+    if(ev.pic&&ev.pic.name){var k=ev.pic.name;if(!map[k])map[k]={name:ev.pic.name,unit:ev.pic.unit||''};}
+    (ev.ang||[]).forEach(function(a){if(a&&a.name){var k=a.name;if(!map[k])map[k]={name:a.name,unit:a.unit||''};}});
   });
   return Object.values(map).sort(function(a,b){return a.name.localeCompare(b.name);});
 }
@@ -1105,6 +1137,15 @@ function getEvs(){
   var r=evs.filter(function(e){return e&&e.id!==undefined&&e.id!==null;});
   if(activeFilters.size>0)r=r.filter(function(e){return activeFilters.has(e.cat);});
   if(sq)r=r.filter(function(e){return e.title&&e.title.toLowerCase().indexOf(sq.toLowerCase())>=0;});
+  if(calPersonFilter.size>0){
+    r=r.filter(function(e){
+      var persons=[];
+      if(e.pimp&&e.pimp.name) persons.push(e.pimp.name);
+      if(e.pic&&e.pic.name) persons.push(e.pic.name);
+      (e.ang||[]).forEach(function(a){if(a&&a.name) persons.push(a.name);});
+      return persons.some(function(n){return calPersonFilter.has(n);});
+    });
+  }
   return r;
 }
 
@@ -1662,7 +1703,171 @@ function refreshMatrix(){if(curTab==='kegiatan')buildKMatrix();if(curTab==='oran
 function miniNav(d){/* mini calendar removed */}
 function navMonth(d){cm+=d;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}mm=cm;my=cy;buildMini();renderCal();}
 function goToday(){cy=today.getFullYear();cm=today.getMonth();my=cy;mm=cm;buildMini();renderCal();}
-function doSearch(v){sq=v;renderCal();refreshMatrix();}
+function doSearch(v){sq=v;updateBadge();renderCal();refreshMatrix();buildSidebarAgenda();}
+
+/* ══ CALENDAR PERSON FILTER ══ */
+function togglePersonDropdown(){
+  var dd=document.getElementById('personDropdown');
+  var btn=document.getElementById('tbPersonBtn');
+  if(!dd) return;
+  var isHidden=dd.classList.contains('hidden');
+  if(isHidden){
+    dd.classList.remove('hidden');
+    if(btn) btn.classList.add('active');
+    buildPersonDropdown();
+    // Close on outside click
+    setTimeout(function(){
+      document.addEventListener('click',function closeDD(e){
+        var wrap=document.getElementById('tbPersonWrap');
+        if(wrap&&!wrap.contains(e.target)){
+          dd.classList.add('hidden');
+          if(btn) btn.classList.remove('active');
+          document.removeEventListener('click',closeDD);
+        }
+      });
+    },10);
+  } else {
+    dd.classList.add('hidden');
+    if(btn) btn.classList.remove('active');
+  }
+}
+
+function buildPersonDropdown(){
+  var list=document.getElementById('pdList');
+  if(!list) return;
+  var searchEl=document.getElementById('pdSearch');
+  var search=searchEl?(searchEl.value||'').toLowerCase():'';
+  var persons=getAllPersons().filter(function(p){
+    return !search||p.name.toLowerCase().indexOf(search)>=0;
+  });
+  list.innerHTML='';
+  if(!persons.length){
+    list.innerHTML='<div style="font-size:11px;color:#94A3B8;padding:6px 8px;text-align:center;">Tidak ada data</div>';
+    return;
+  }
+  persons.forEach(function(p){
+    var col=avColor(p.name);
+    var sel=calPersonFilter.has(p.name);
+    var item=document.createElement('div');
+    item.className='pd-item'+(sel?' selected':'');
+    item.innerHTML=
+      '<div class="pd-av" style="background:'+col+'">'+initials(p.name)+'</div>'+
+      '<div style="flex:1;"><div style="font-size:11px;font-weight:'+(sel?'600':'400')+';">'+p.name+'</div>'+
+      (p.unit?'<div style="font-size:9px;color:#94A3B8;">'+p.unit+'</div>':'')+
+      '</div>'+
+      (sel?'<span style="color:#3B82F6;font-size:12px;font-weight:700;">✓</span>':'');
+    (function(name){
+      item.onclick=function(e){
+        e.stopPropagation();
+        if(calPersonFilter.has(name)) calPersonFilter.delete(name);
+        else calPersonFilter.add(name);
+        updateCalPersonBtn();
+        buildPersonDropdown();
+        renderCal();refreshMatrix();buildSidebarAgenda();
+      };
+    })(p.name);
+    list.appendChild(item);
+  });
+}
+
+function filterPersonDropdown(){buildPersonDropdown();}
+
+function updateCalPersonBtn(){
+  var btn=document.getElementById('tbPersonBtn');
+  var lbl=document.getElementById('tbPersonLabel');
+  if(!lbl) return;
+  if(calPersonFilter.size===0){
+    lbl.textContent='👤 Semua Orang';
+    if(btn) btn.classList.remove('active');
+  } else if(calPersonFilter.size===1){
+    var name=Array.from(calPersonFilter)[0];
+    var col=avColor(name);
+    lbl.innerHTML='<div class="tb-av" style="background:'+col+'">'+initials(name)+'</div>&nbsp;'+name;
+    if(btn) btn.classList.add('active');
+  } else {
+    lbl.textContent='👤 '+calPersonFilter.size+' orang';
+    if(btn) btn.classList.add('active');
+  }
+}
+
+/* ══ AGENDA SCREENSHOT ══ */
+function screenshotAgenda(){
+  var btn=document.getElementById('agendaScreenshotBtn');
+  var wrap=document.getElementById('sbAgendaWrap');
+  if(!wrap) return;
+
+  // Show loading state
+  var origText=btn.textContent;
+  btn.textContent='⏳';
+  btn.disabled=true;
+
+  // Temporarily expand for screenshot (remove clip)
+  var origOverflow=wrap.style.overflow;
+  wrap.style.overflow='visible';
+
+  html2canvas(wrap,{
+    backgroundColor:'#ffffff',
+    scale:2,
+    useCORS:true,
+    allowTaint:true,
+    logging:false,
+    width:wrap.offsetWidth,
+    height:wrap.scrollHeight,
+    windowWidth:wrap.offsetWidth,
+  }).then(function(canvas){
+    wrap.style.overflow=origOverflow;
+    btn.textContent=origText;
+    btn.disabled=false;
+
+    // Try copy to clipboard first
+    canvas.toBlob(function(blob){
+      if(navigator.clipboard&&window.ClipboardItem){
+        navigator.clipboard.write([
+          new ClipboardItem({'image/png': blob})
+        ]).then(function(){
+          showToast('📸 Screenshot disalin ke clipboard! Langsung Ctrl+V ke aplikasi lain.');
+        }).catch(function(){
+          // Fallback: download as JPG
+          downloadAgendaImg(canvas);
+        });
+      } else {
+        // Fallback: download
+        downloadAgendaImg(canvas);
+      }
+    },'image/png');
+  }).catch(function(err){
+    wrap.style.overflow=origOverflow;
+    btn.textContent=origText;
+    btn.disabled=false;
+    console.error('Screenshot error:',err);
+    showToast('❌ Gagal screenshot');
+  });
+}
+
+function downloadAgendaImg(canvas){
+  // Convert to JPG and download
+  var now=new Date();
+  var stamp=now.getDate()+'_'+(now.getMonth()+1)+'_'+now.getFullYear();
+  var link=document.createElement('a');
+  link.download='Agenda_'+stamp+'.jpg';
+  link.href=canvas.toDataURL('image/jpeg',0.95);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('📥 Agenda didownload sebagai JPG!');
+}
+
+function clearCalPersonFilter(){
+  calPersonFilter.clear();
+  updateCalPersonBtn();
+  var dd=document.getElementById('personDropdown');
+  if(dd) dd.classList.add('hidden');
+  var btn=document.getElementById('tbPersonBtn');
+  if(btn) btn.classList.remove('active');
+  var ps=document.getElementById('pdSearch');
+  if(ps) ps.value='';
+  renderCal();refreshMatrix();buildSidebarAgenda();
+}
 
 /* ══ CHIPS ══ */
 function buildChips(sel){
@@ -2820,6 +3025,15 @@ var TW_BULAN = [2,5,8,11]; // Mar,Jun,Sep,Des (0-indexed) = bulan terakhir tiap 
 var surveiList = [];
 var bayarData  = {}; // key: "surveiId_yyyy_mm" → {spk, tagihanKirim, tagihanTerima, mo2, ldp, bayar, note}
 
+var DEFAULT_SURVEI=[
+  {id:'skdu',  nama:'SKDU',   label:'Survei Kegiatan Dunia Usaha',    jenis:'bulanan'},
+  {id:'sppr',  nama:'SPPR',   label:'Survei Penjualan Properti',      jenis:'bulanan'},
+  {id:'skpwdn',nama:'SKPwDN', label:'Survei Konsumen',                jenis:'bulanan'},
+  {id:'sbbt',  nama:'SBBT',   label:'Survei Bank & Non-Bank',         jenis:'triwulanan'},
+  {id:'spe',   nama:'SPE',    label:'Survei Pelaksana Survei',        jenis:'triwulanan'},
+  {id:'bsekda',nama:'Buku SEKDA', label:'Publikasi Buku SEKDA',       jenis:'bulanan'},
+  {id:'event', nama:'Event',  label:'Kegiatan/Event',                 jenis:'eventual'},
+];
 function loadBayarData(){
   try{
     var s=localStorage.getItem(LS_SURVEI);
@@ -2827,18 +3041,8 @@ function loadBayarData(){
     var b=localStorage.getItem(LS_BAYAR);
     if(b){ var q=JSON.parse(b); if(q) bayarData=q; }
   }catch(e){}
-  if(!surveiList.length){
-    surveiList=[
-      {id:'skdu',  nama:'SKDU',   label:'Survei Kegiatan Dunia Usaha',    jenis:'bulanan'},
-      {id:'sppr',  nama:'SPPR',   label:'Survei Penjualan Properti',      jenis:'bulanan'},
-      {id:'skpwdn',nama:'SKPwDN', label:'Survei Konsumen',                jenis:'bulanan'},
-      {id:'sbbt',  nama:'SBBT',   label:'Survei Bank & Non-Bank',         jenis:'triwulanan'},
-      {id:'spe',   nama:'SPE',    label:'Survei Pelaksana Survei',        jenis:'triwulanan'},
-      {id:'bsekda',nama:'Buku SEKDA', label:'Publikasi Buku SEKDA',       jenis:'bulanan'},
-      {id:'event', nama:'Event',  label:'Kegiatan/Event',                 jenis:'eventual'},
-    ];
-    saveBayarData();
-  }
+  // Jangan push ke Firebase di sini - biarkan fbPull yang jadi source of truth
+  // Default hanya dipakai jika Firebase juga kosong (ditangani di INIT)
 }
 
 function saveBayarData(){
@@ -3295,9 +3499,20 @@ function openKelolaSurvei(){
   if(!surveiList.length){
     list.innerHTML='<div style="text-align:center;padding:20px;color:#94A3B8;font-size:12px;">Belum ada survei.</div>';
   }
-  surveiList.forEach(function(s){
+
+  var dragSrc=null;
+
+  surveiList.forEach(function(s, idx){
     var row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #F1F5F9;';
+    row.dataset.idx=idx;
+    row.draggable=true;
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #F1F5F9;cursor:default;transition:background .1s;';
+
+    // Drag handle
+    var handle=document.createElement('div');
+    handle.innerHTML='⠿';
+    handle.title='Geser untuk ubah urutan';
+    handle.style.cssText='font-size:14px;color:#CBD5E1;cursor:grab;padding:0 4px;flex-shrink:0;user-select:none;';
 
     var info=document.createElement('div');
     info.style.flex='1';
@@ -3307,23 +3522,47 @@ function openKelolaSurvei(){
 
     var editBtn=document.createElement('button');
     editBtn.textContent='✏️ Edit';
-    editBtn.style.cssText='padding:5px 12px;border-radius:7px;border:1px solid #E2E8F0;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;color:#334155;white-space:nowrap;';
+    editBtn.style.cssText='padding:5px 10px;border-radius:7px;border:1px solid #E2E8F0;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;color:#334155;white-space:nowrap;';
 
     var delBtn=document.createElement('button');
-    delBtn.textContent='🗑 Hapus';
-    delBtn.style.cssText='padding:5px 12px;border-radius:7px;border:1px solid #FECACA;background:#FEF2F2;color:#EF4444;font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap;';
+    delBtn.textContent='🗑';
+    delBtn.style.cssText='padding:5px 8px;border-radius:7px;border:1px solid #FECACA;background:#FEF2F2;color:#EF4444;font-size:11px;cursor:pointer;font-family:inherit;';
 
-    // Closure to capture correct survei id
     (function(sid){
-      editBtn.onclick=function(){
-        closeM('kelolaOv');
-        openAddSurvei(sid);
-      };
-      delBtn.onclick=function(){
-        deleteSurvei(sid);
-      };
+      editBtn.onclick=function(){closeM('kelolaOv');openAddSurvei(sid);};
+      delBtn.onclick=function(){deleteSurvei(sid);};
     })(s.id);
 
+    // Drag events
+    row.addEventListener('dragstart',function(e){
+      dragSrc=this;
+      e.dataTransfer.effectAllowed='move';
+      this.style.opacity='.4';
+    });
+    row.addEventListener('dragend',function(){
+      this.style.opacity='1';
+      list.querySelectorAll('[data-idx]').forEach(function(r){r.style.background='';});
+    });
+    row.addEventListener('dragover',function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect='move';
+      list.querySelectorAll('[data-idx]').forEach(function(r){r.style.background='';});
+      if(this!==dragSrc) this.style.background='#EFF6FF';
+      return false;
+    });
+    row.addEventListener('drop',function(e){
+      e.stopPropagation();
+      if(dragSrc===this) return;
+      var fromIdx=parseInt(dragSrc.dataset.idx);
+      var toIdx=parseInt(this.dataset.idx);
+      var moved=surveiList.splice(fromIdx,1)[0];
+      surveiList.splice(toIdx,0,moved);
+      saveBayarData();
+      openKelolaSurvei(); // re-render
+      return false;
+    });
+
+    row.appendChild(handle);
     row.appendChild(info);
     row.appendChild(editBtn);
     row.appendChild(delBtn);
@@ -3368,6 +3607,9 @@ function buildSidebarAgenda(){
       countEl.style.display='none';
     }
   }
+  // Show/hide screenshot button
+  var ssBtn=document.getElementById('agendaScreenshotBtn');
+  if(ssBtn) ssBtn.style.display=todayEvs.length?'inline-flex':'none';
 
   listEl.innerHTML='';
   if(!todayEvs.length){
@@ -3438,19 +3680,22 @@ function buildSidebarAgenda(){
 }
 
 /* ══ INIT ══ */
-loadFbConfig();   // Sets fbDbUrl (from localStorage or hardcoded default)
-loadBayarData();  // Load payment tracking data
+loadFbConfig();
+loadBayarData();   // Load from localStorage as temporary
 updateBackupInfo();
-initSidebar();    // Restore sidebar state
-buildFilter(); buildMini(); renderCal(); // Render empty/local first
-// Always pull from Firebase on open
+initSidebar();
+buildFilter(); buildMini(); renderCal();
+// Pull from Firebase — source of truth
 fbPull(function(ok){
   if(!ok){
-    // Firebase empty — load localStorage as fallback
+    // Firebase empty — push local data up
     loadData();
     buildFilter(); buildMini(); renderCal();
     if(evs.length>0) fbPush(null);
-    // Also push local bayar data if any
+    // Bayar: jika lokal juga kosong, pakai default lalu push
+    if(!surveiList.length){
+      surveiList=DEFAULT_SURVEI.map(function(s){return Object.assign({},s);});
+    }
     if(surveiList.length>0) saveBayarData();
   }
   fbStartAutoSync();
