@@ -521,7 +521,10 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
   <!-- AGENDA HARI INI -->
   <div class="sb-agenda sb-hide" id="sbAgendaWrap">
     <div class="sb-agenda-header">
-      <span class="sb-agenda-title">📋 Agenda Hari Ini</span>
+      <div>
+        <span class="sb-agenda-title">📋 Agenda Hari Ini</span>
+        <div id="sbAgendaDate" style="font-size:11px;font-weight:600;color:#334155;margin-top:2px;"></div>
+      </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <span class="sb-agenda-count" id="sbAgendaCount" style="display:none;"></span>
         <button id="agendaScreenshotBtn" onclick="screenshotAgenda()" title="Screenshot ke clipboard" style="background:none;border:1px solid #E2E8F0;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:11px;color:#64748B;display:none;">📸</button>
@@ -1777,12 +1780,18 @@ function updateCalPersonBtn(){
   var lbl=document.getElementById('tbPersonLabel');
   if(!lbl) return;
   if(calPersonFilter.size===0){
+    lbl.style.display='';
+    lbl.style.alignItems='';
+    lbl.style.gap='';
     lbl.textContent='👤 Semua Orang';
     if(btn) btn.classList.remove('active');
   } else if(calPersonFilter.size===1){
     var name=Array.from(calPersonFilter)[0];
     var col=avColor(name);
-    lbl.innerHTML='<div class="tb-av" style="background:'+col+'">'+initials(name)+'</div>&nbsp;'+name;
+    lbl.style.display='inline-flex';
+    lbl.style.alignItems='center';
+    lbl.style.gap='6px';
+    lbl.innerHTML='<span style="width:18px;height:18px;border-radius:50%;background:'+col+';display:inline-flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;flex-shrink:0;">'+initials(name)+'</span>'+name;
     if(btn) btn.classList.add('active');
   } else {
     lbl.textContent='👤 '+calPersonFilter.size+' orang';
@@ -3597,6 +3606,14 @@ function buildSidebarAgenda(){
     return ts>=s&&ts<=en;
   }).sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
 
+  // Set today's date label
+  var dateEl=document.getElementById('sbAgendaDate');
+  if(dateEl){
+    var now=new Date();
+    var days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    var months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    dateEl.textContent=days[now.getDay()]+', '+now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  }
   // Update count badge
   var countEl=document.getElementById('sbAgendaCount');
   if(countEl){
