@@ -644,6 +644,11 @@ body{font-family:'DM Sans',sans-serif;background:#F1F5F9;height:100vh;overflow:h
           Minggu
         </button>
       </div>
+      <!-- Screenshot weekly view button (hanya tampil saat view Minggu) -->
+      <button id="weekScreenshotBtn" onclick="screenshotWeek()" title="Screenshot kalender mingguan" style="display:none;align-items:center;gap:5px;padding:6px 11px;border:1px solid #E2E8F0;border-radius:8px;background:#fff;color:#475569;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;white-space:nowrap;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Screenshot
+      </button>
     </div>
   </div>
 
@@ -1506,20 +1511,29 @@ function setCalView(view){
   var weekView=document.getElementById('cal-week-view');
   var btnMonth=document.getElementById('vtBtnMonth');
   var btnWeek=document.getElementById('vtBtnWeek');
+  var ssBtn=document.getElementById('weekScreenshotBtn');
   if(view==='week'){
     monthView.style.display='none';
     weekView.style.display='flex';
     weekView.style.flexDirection='column';
     if(btnMonth) btnMonth.classList.remove('active');
     if(btnWeek) btnWeek.classList.add('active');
+    if(ssBtn) ssBtn.style.display='inline-flex';
     renderWeek();
   } else {
     monthView.style.display='';
     weekView.style.display='none';
     if(btnMonth) btnMonth.classList.add('active');
     if(btnWeek) btnWeek.classList.remove('active');
+    if(ssBtn) ssBtn.style.display='none';
     renderCal();
   }
+}
+
+/* ── refreshCal: update whichever view is active ── */
+function refreshCal(){
+  if(calView==='week'){renderWeek();buildSidebarAgenda();}
+  else{renderCal();}
 }
 
 /* ══ DAY POPUP — all events on a date ══ */
@@ -2069,6 +2083,92 @@ function screenshotAgenda(){
   });
 }
 
+/* ══ SCREENSHOT WEEKLY VIEW ══ */
+function screenshotWeek(){
+  var btn=document.getElementById('weekScreenshotBtn');
+  // Capture header + body together
+  var weekView=document.getElementById('cal-week-view');
+  var topbar=document.querySelector('.topbar');
+  if(!weekView) return;
+
+  var origText=btn.innerHTML;
+  btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> ⏳';
+  btn.disabled=true;
+
+  // We'll capture the topbar (range label) + weekly view together
+  // by creating a wrapper div temporarily
+  var wrapper=document.createElement('div');
+  wrapper.style.cssText='position:fixed;top:-9999px;left:-9999px;background:#fff;width:'+(weekView.offsetWidth)+'px;';
+
+  // Clone topbar center (date range)
+  var rangeDiv=document.createElement('div');
+  rangeDiv.style.cssText='padding:10px 20px;background:#fff;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:center;gap:8px;font-family:DM Sans,sans-serif;';
+  var titleEl=document.getElementById('tbTitle');
+  if(titleEl){
+    var titleClone=document.createElement('span');
+    titleClone.style.cssText='font-size:18px;font-weight:600;color:#0F172A;letter-spacing:-.4px;';
+    titleClone.textContent=titleEl.textContent;
+    rangeDiv.appendChild(titleClone);
+  }
+  wrapper.appendChild(rangeDiv);
+
+  // Clone week view
+  var weekClone=weekView.cloneNode(true);
+  weekClone.style.cssText='display:flex;flex-direction:column;overflow:visible;max-height:none;';
+  // Remove scrollbars from clone
+  weekClone.querySelectorAll('*').forEach(function(el){el.style.overflow='visible';});
+  wrapper.appendChild(weekClone);
+
+  document.body.appendChild(wrapper);
+
+  html2canvas(wrapper,{
+    backgroundColor:'#ffffff',
+    scale:2,
+    useCORS:true,
+    allowTaint:true,
+    logging:false,
+    width:wrapper.offsetWidth,
+    height:wrapper.scrollHeight,
+  }).then(function(canvas){
+    document.body.removeChild(wrapper);
+    btn.innerHTML=origText;
+    btn.disabled=false;
+
+    var now=new Date();
+    var stamp=now.getDate()+'_'+(now.getMonth()+1)+'_'+now.getFullYear();
+
+    canvas.toBlob(function(blob){
+      if(navigator.clipboard&&window.ClipboardItem){
+        navigator.clipboard.write([
+          new ClipboardItem({'image/png': blob})
+        ]).then(function(){
+          showToast('📸 Screenshot kalender mingguan disalin ke clipboard!');
+        }).catch(function(){
+          downloadWeekImg(canvas,stamp);
+        });
+      } else {
+        downloadWeekImg(canvas,stamp);
+      }
+    },'image/png');
+  }).catch(function(err){
+    document.body.removeChild(wrapper);
+    btn.innerHTML=origText;
+    btn.disabled=false;
+    console.error('Week screenshot error:',err);
+    showToast('❌ Gagal screenshot kalender mingguan');
+  });
+}
+
+function downloadWeekImg(canvas,stamp){
+  var link=document.createElement('a');
+  link.download='Kalender_Mingguan_'+(stamp||'screenshot')+'.png';
+  link.href=canvas.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('📥 Screenshot didownload sebagai PNG!');
+}
+
 function downloadAgendaImg(canvas){
   // Convert to JPG and download
   var now=new Date();
@@ -2276,7 +2376,7 @@ function deleteSelected(){
     saveData();
     clearSelection();
     closeConfirm();
-    buildMini();renderCal();buildFilter();refreshMatrix();
+    buildMini();refreshCal();buildFilter();refreshMatrix();
     showToast('🗑️ '+ids.length+' kegiatan berhasil dihapus');
   };
   var ov=document.getElementById('confirmOv');
@@ -2484,7 +2584,7 @@ function saveEv(){
     attachments:tempAttachments.map(function(a){return {name:a.name,size:a.size,type:a.type,dataUrl:a.dataUrl};})};
   if(eid){evs=evs.map(function(e){return String(e.id)===String(eid)?ev:e;});}else{evs.push(ev);}
   saveData();
-  closeM('addOv');buildMini();renderCal();buildFilter();refreshMatrix();
+  closeM('addOv');buildMini();refreshCal();buildFilter();refreshMatrix();
   showToast(eid?'✅ Kegiatan berhasil diperbarui':'✅ Kegiatan berhasil disimpan');
 }
 
@@ -2526,7 +2626,7 @@ function delEvById(id){
     saveData();
     closeConfirm();
     closeM('detOv');
-    buildMini();renderCal();buildFilter();refreshMatrix();
+    buildMini();refreshCal();buildFilter();refreshMatrix();
     showToast('🗑️ Kegiatan berhasil dihapus');
   };
   var ov=document.getElementById('confirmOv');
@@ -2598,7 +2698,7 @@ function showDet(ev){
         evRef.manualStatus=(sval==='auto')?null:sval;
         evs=evs.map(function(e){return String(e.id)===String(evRef.id)?evRef:e;});
         saveData();
-        buildFilter();renderCal();refreshMatrix();
+        buildFilter();refreshCal();refreshMatrix();
         // Update select color without full re-render
         this.className='qs-select '+(stClsMap[sval]||'st-auto');
       };
@@ -2970,7 +3070,7 @@ function fbPull(cb){
     if(!results.calDone||!results.bayarDone) return;
     lastFbSync=nowHMS();
     fbSetStatus('ok');
-    buildFilter();buildMini();renderCal();refreshMatrix();
+    buildFilter();buildMini();refreshCal();refreshMatrix();
     if(curTab==='bayar') renderBayar();
     if(cb) cb(!results.calErr);
   }
